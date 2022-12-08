@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<BruteForcePattern>
+    <Condition>
+        <Pos>3</Pos>
+		<Roll>2</Roll>
+        <Item>Chomp</Item>
+    </Condition>
+
+	<Condition>
+		<Pos>3</Pos>
+		<Roll>3</Roll>
+		<Item>Chomp</Item>
+	</Condition>
+</BruteForcePattern>

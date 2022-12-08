@@ -1,0 +1,10 @@
+C:\Users\cray4\source\repos\NovTest2\bin\Debug\NovTest2.exe.config
+C:\Users\cray4\source\repos\NovTest2\bin\Debug\NovTest2.exe
+C:\Users\cray4\source\repos\NovTest2\bin\Debug\NovTest2.pdb
+C:\Users\cray4\source\repos\NovTest2\obj\Debug\MKDD_TAS_Tool.csprojAssemblyReference.cache
+C:\Users\cray4\source\repos\NovTest2\obj\Debug\MKDD_TAS_Tool.MainForm.resources
+C:\Users\cray4\source\repos\NovTest2\obj\Debug\NovTest2.Properties.Resources.resources
+C:\Users\cray4\source\repos\NovTest2\obj\Debug\MKDD_TAS_Tool.csproj.GenerateResource.cache
+C:\Users\cray4\source\repos\NovTest2\obj\Debug\MKDD_TAS_Tool.csproj.CoreCompileInputs.cache
+C:\Users\cray4\source\repos\NovTest2\obj\Debug\NovTest2.exe
+C:\Users\cray4\source\repos\NovTest2\obj\Debug\NovTest2.pdb
