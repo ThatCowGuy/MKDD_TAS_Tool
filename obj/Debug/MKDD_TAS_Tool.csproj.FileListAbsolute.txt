@@ -8,3 +8,13 @@ C:\Users\cray4\source\repos\NovTest2\obj\Debug\MKDD_TAS_Tool.csproj.GenerateReso
 C:\Users\cray4\source\repos\NovTest2\obj\Debug\MKDD_TAS_Tool.csproj.CoreCompileInputs.cache
 C:\Users\cray4\source\repos\NovTest2\obj\Debug\NovTest2.exe
 C:\Users\cray4\source\repos\NovTest2\obj\Debug\NovTest2.pdb
+\\wsl.localhost\Ubuntu-20.04\home\cow\MKDD_TAS_Tool\bin\Debug\NovTest2.exe.config
+\\wsl.localhost\Ubuntu-20.04\home\cow\MKDD_TAS_Tool\bin\Debug\NovTest2.exe
+\\wsl.localhost\Ubuntu-20.04\home\cow\MKDD_TAS_Tool\bin\Debug\NovTest2.pdb
+\\wsl.localhost\Ubuntu-20.04\home\cow\MKDD_TAS_Tool\obj\Debug\MKDD_TAS_Tool.csproj.AssemblyReference.cache
+\\wsl.localhost\Ubuntu-20.04\home\cow\MKDD_TAS_Tool\obj\Debug\MKDD_TAS_Tool.MainForm.resources
+\\wsl.localhost\Ubuntu-20.04\home\cow\MKDD_TAS_Tool\obj\Debug\NovTest2.Properties.Resources.resources
+\\wsl.localhost\Ubuntu-20.04\home\cow\MKDD_TAS_Tool\obj\Debug\MKDD_TAS_Tool.csproj.GenerateResource.cache
+\\wsl.localhost\Ubuntu-20.04\home\cow\MKDD_TAS_Tool\obj\Debug\MKDD_TAS_Tool.csproj.CoreCompileInputs.cache
+\\wsl.localhost\Ubuntu-20.04\home\cow\MKDD_TAS_Tool\obj\Debug\NovTest2.exe
+\\wsl.localhost\Ubuntu-20.04\home\cow\MKDD_TAS_Tool\obj\Debug\NovTest2.pdb

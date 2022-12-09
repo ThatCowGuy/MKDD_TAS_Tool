@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Windows.Forms;
+using System.Threading;
 using System.Xml;
 
 namespace MKDD_TAS_Tool
@@ -21,28 +22,55 @@ namespace MKDD_TAS_Tool
             if (ID == 2) return this.comboBox2.GetItemText(this.comboBox2.SelectedItem);
             else return "Invalid";
         }
+
+        public String[] get_RollsPerPos(uint RNG, uint[][] ProbMatrix, uint[] ColWeightVector)
+        {
+            // create row string array
+            String[] row_content = new String[9];
+
+            // RNG value goes into first column
+            row_content[0] = "0x" + RNG.ToString("X8");
+
+            // Get ItemRolls for every Position
+            for (int pos = 0; pos < 8; pos++)
+            {
+                int rolledItemID = CodeRandomness.calc_ItemRoll(RNG, ProbMatrix, pos, ColWeightVector[pos]);
+                if (rolledItemID == -1) rolledItemID = 0x10; // that's one of the normally unobtainable ones, called "- - -"
+
+                String rolledItem_name = ItemData.rollable_items_names[rolledItemID];
+                // if the result is "Special", replace it by the correct special item
+                if (rolledItem_name == "Special")
+                {
+                    rolledItem_name = ItemData.item_names[CharData.specials_dict[get_selected_char_name(1)]];
+                    rolledItemID = (int)ItemData.item_name_to_ID(rolledItem_name);
+                }
+
+                // special check for Triple Reds only if not Pos#1
+                if (rolledItem_name == "Triple Greens" & pos > 0)
+                {
+                    // advance RNG once more for this extra check (temporarily!!!)
+                    uint shellRNG = CodeRandomness.AdvanceRNG(RNG);
+                    // 40% chance of converting to Triple Reds
+                    if (0.4 < (CodeRandomness.shiftRNGcnvtoFloat(shellRNG)))
+                    {
+                        rolledItemID = (int)ItemData.item_name_to_ID("Triple Reds");
+                        rolledItem_name = ItemData.rollable_items_names[rolledItemID];
+                    }
+                }
+
+                // rolled items into the others
+                row_content[pos + 1] = rolledItem_name;
+            }
+            // return resulting content array
+            return row_content;
+        }
+
         public MainForm()
         {
             InitializeComponent();
             // Im putting these defaults HERE because VSC doesnt want me to edit the auto-gen code...
             this.comboBox1.SelectedIndex = 1; // BL
             this.comboBox2.SelectedIndex = 7; // BJR
-
-            this.comboBox3.SelectedIndex = 0;
-            this.comboBox4.SelectedIndex = 0;
-            this.comboBox5.SelectedIndex = 0;
-            this.comboBox6.SelectedIndex = 0;
-            this.comboBox7.SelectedIndex = 0;
-            this.comboBox8.SelectedIndex = 0;
-            this.comboBox9.SelectedIndex = 0;
-            this.comboBox10.SelectedIndex = 0;
-            this.comboBox11.SelectedIndex = 0;
-            this.comboBox12.SelectedIndex = 0;
-            this.comboBox13.SelectedIndex = 0;
-            this.comboBox14.SelectedIndex = 0;
-            this.comboBox15.SelectedIndex = 0;
-            this.comboBox16.SelectedIndex = 0;
-            this.comboBox17.SelectedIndex = 0;
 
             // this forbids the user from changing grid content (and removes last row)
             this.dataGridView1.AllowUserToAddRows = false;
@@ -77,7 +105,7 @@ namespace MKDD_TAS_Tool
             {
                 ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")],
                 ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")],
-                ItemData.item_weights[ItemData.item_name_to_ID("Blue Shell")],
+                ItemData.item_weights[ItemData.item_name_to_ID("Blue")],
                 ItemData.item_weights[ItemData.item_name_to_ID("Banana")],
                 ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")],
                 ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")],
@@ -111,42 +139,12 @@ namespace MKDD_TAS_Tool
             // and start simulating the RNG
             for (uint i = 0; i < 20; i++)
             {
-                // RNG value goes into first column
-                row_content[0] = "0x" + RNG.ToString("X8");
+                // get row content fromg RNG simulation
+                row_content = get_RollsPerPos(RNG, ItemProbMatrix_char1, total_column_weight_1);
+                this.dataGridView1.Rows.Add(row_content);
 
-                // Get ItemRolls for every Position
-                for (int pos = 0; pos < 8; pos++)
-                {
-                    int rolledItemID = CodeRandomness.calc_ItemRoll(RNG, ItemProbMatrix_char1, pos, total_column_weight_1[pos]);
-                    if (rolledItemID == -1) rolledItemID = 0x10; // that's one of the normally unobtainable ones, called "- - -"
-
-                    String rolledItem_name = ItemData.rollable_items_names[rolledItemID];
-                    // if the result is "Special", replace it by the correct special item
-                    if (rolledItem_name == "Special")
-                    {
-                        rolledItem_name = ItemData.item_names[CharData.specials_dict[get_selected_char_name(1)]];
-                        rolledItemID = (int)ItemData.item_name_to_ID(rolledItem_name);
-                    }
-
-                    // special check for Triple Reds only if not Pos#1
-                    if (rolledItem_name == "Triple Greens" & pos > 0)
-                    {
-                        // advance RNG once more for this extra check (temporarily!!!)
-                        uint shellRNG = CodeRandomness.AdvanceRNG(RNG);
-                        // 40% chance of converting to Triple Reds
-                        if (0.4 < (CodeRandomness.shiftRNGcnvtoFloat(shellRNG)))
-                        {
-                            rolledItemID = (int)ItemData.item_name_to_ID("Triple Reds");
-                            rolledItem_name = ItemData.rollable_items_names[rolledItemID];
-                        }
-                    }
-
-                    // rolled items into the others
-                    row_content[pos + 1] = rolledItem_name;
-                }
-
-                // add results to grid and party
-                dataGridView1.Rows.Add(row_content);
+                // WOWIE
+                this.dataGridView1.Rows[0].Cells[1].Style.BackColor = Color.Red;
 
                 // update the RNG
                 RNG = CodeRandomness.AdvanceRNG(RNG);
@@ -189,34 +187,34 @@ namespace MKDD_TAS_Tool
                         break;
                 }
             }
+
+            // init min + max to find them from the conditions list
+            uint min_roll = Int32.MaxValue;
+            uint max_roll = 0;
+            foreach (BruteforceCondition cond in Conditions)
+            {
+                if (cond.roll < min_roll) min_roll = cond.roll;
+                if (cond.roll > max_roll) max_roll = cond.roll;
+            }
+            // create a condition matrix from this
+            max_roll = (max_roll - min_roll) + 1;
+            String[,] condition_matrix = new string[max_roll, 8];
+            String[,] history_matrix = new string[10, 8];
             Console.WriteLine("Collected Conditions:");
             foreach (BruteforceCondition cond in Conditions)
             {
                 Console.WriteLine(String.Format("{0} at Pos{1} on Roll={2}", ItemData.item_names[cond.item_id], cond.pos, cond.roll));
+                // adjust all rolls so the new min becomes 0
+                condition_matrix[(cond.roll - min_roll), (cond.pos - 1)] = ItemData.item_names[cond.item_id];
             }
-
-            // reset the grid contents
-            dataGridView1.Rows.Clear();
-            dataGridView1.Columns.Clear();
-            // create column headers - Add(col_name, col_text);
-            dataGridView1.Columns.Add("RNGSeed", "RNG Value");
-            for (int pos = 1; pos < 9; pos++)
-                dataGridView1.Columns.Add("Pos" + pos.ToString(), "Pos " + pos.ToString());
-            for (int col = 0; col < 9; col++)
-                dataGridView1.Columns[col].Width = 90;
 
             // init RNG from TextField
             uint RNG = uint.Parse(textBox3.Text.Replace("0x", ""), System.Globalization.NumberStyles.HexNumber);
             // Setup History vals
             uint[] RNG_history = new uint[10];
-            char[,] Item_history = new char[8, 10];
-            for (int k = 0; k < 8; k++)
+            for (int step = 0; step < 10; step++)
             {
-                for (int j = 0; j < 10; j++)
-                {
-                    RNG_history[j] = RNG;
-                    Item_history[k, j] = 'x';
-                }
+                RNG_history[step] = RNG;
             }
 
             // set up the 2 probability matrices
@@ -224,7 +222,7 @@ namespace MKDD_TAS_Tool
             {
                 ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")],
                 ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")],
-                ItemData.item_weights[ItemData.item_name_to_ID("Blue Shell")],
+                ItemData.item_weights[ItemData.item_name_to_ID("Blue")],
                 ItemData.item_weights[ItemData.item_name_to_ID("Banana")],
                 ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")],
                 ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")],
@@ -234,12 +232,12 @@ namespace MKDD_TAS_Tool
                 ItemData.item_weights[CharData.specials_dict[get_selected_char_name(1)]]
             };
             // the 2nd matrix is a clone, except the last weight array is replaced by the diff special
-            uint[][] ItemProbMatrix_char2 = (uint[][]) ItemProbMatrix_char1.Clone();
+            uint[][] ItemProbMatrix_char2 = (uint[][])ItemProbMatrix_char1.Clone();
             ItemProbMatrix_char2[9] = ItemData.item_weights[CharData.specials_dict[get_selected_char_name(2)]];
 
             // un-set the weights of unobtainable items now
-                // Sware's default is that Lightning is NOT obtainable...
-                // Mind that BlueShell and all Specials may only be held once
+            // Sware's default is that Lightning is NOT obtainable...
+            // Mind that BlueShell and all Specials may only be held once
 
             // pre-calculate the total weight for each column
             uint[] total_column_weight_1 = new uint[8];
@@ -253,35 +251,59 @@ namespace MKDD_TAS_Tool
                 }
             }
 
-            for (uint i = 0; i < 5; i++)
+            // create row string array
+            String[] row_content = new String[9];
+            uint bruteforce_attempts = 0;
+            while (true)
             {
-                // Get ItemRolls for every Position
+                // get row content fromg RNG simulation
+                row_content = get_RollsPerPos(RNG, ItemProbMatrix_char1, total_column_weight_1);
+
+                // populate lowest history matrix row with the new content
+                RNG_history[(10 - 1)] = RNG;
                 for (int pos = 0; pos < 8; pos++)
+                    history_matrix[(10 - 1), pos] = row_content[(pos + 1)];
+
+                // compare the history matrix with the condition matrix
+                bool bruteforce_match = true;
+                for (int step = 0; step < max_roll; step++)
                 {
-                    int rolledItemID = CodeRandomness.calc_ItemRoll(RNG, ItemProbMatrix_char1, pos, total_column_weight_1[pos]);
-                    if (rolledItemID == -1) rolledItemID = 0x10; // that's one of the normally unobtainable ones, called "- - -"
-
-                    String rolledItem_name = ItemData.rollable_items_names[rolledItemID];
-                    // if the result is "Special", replace it by the correct special item
-                    if (rolledItem_name == "Special")
+                    for (int pos = 2; pos < 6; pos++)
                     {
-                        rolledItem_name = ItemData.item_names[CharData.specials_dict[get_selected_char_name(1)]];
-                        rolledItemID = (int)ItemData.item_name_to_ID(rolledItem_name);
-                    }
+                        string desired_roll = condition_matrix[(max_roll - 1 - step), pos];
+                        if (String.IsNullOrEmpty(desired_roll)) continue;
 
-                    // special check for Triple Reds only if not Pos#1
-                    if (rolledItem_name == "Triple Greens" & pos > 0)
-                    {
-                        // advance RNG once more for this extra check (temporarily!!!)
-                        uint shellRNG = CodeRandomness.AdvanceRNG(RNG);
-                        // 40% chance of converting to Triple Reds
-                        if (0.4 < (CodeRandomness.shiftRNGcnvtoFloat(shellRNG)))
+                        string actual_roll = history_matrix[(10 - 1 - step), pos];
+                        if (desired_roll != actual_roll)
                         {
-                            rolledItemID = (int) ItemData.item_name_to_ID("Triple Reds");
-                            rolledItem_name = ItemData.rollable_items_names[rolledItemID];
+                            bruteforce_match = false;
+                            break;
                         }
                     }
                 }
+                if (bruteforce_match == true)
+                {
+                    Console.WriteLine(String.Format("MATCH: RNG = {0:x}", RNG_history[0]));
+                    this.textBox1.Text = String.Format("{0:X}", RNG_history[0]);
+                    break;
+                }
+
+                bruteforce_attempts++;
+                if (bruteforce_attempts % 100000 == 0)
+                {
+                    double percentage = (100.0 * bruteforce_attempts) / ItemData.MAX_RNG_Combinations;
+                    Console.WriteLine(String.Format("{0:n0} Attempts ({1:0.00}%)", bruteforce_attempts, percentage));
+                    //this.textBox2.Text = String.Format("{0:n0} Attempts ({1:0.00}%)", bruteforce_attempts, percentage);
+                }
+
+                // step through the history matrix and shift everything up 1 row to update it
+                for (int step = 0; step < (10 - 1); step++)
+                {
+                    RNG_history[step] = RNG_history[(step + 1)];
+                    for (int pos = 0; pos < 8; pos++)
+                        history_matrix[step, pos] = history_matrix[(step + 1), pos];
+                }
+                // this.dataGridView1.Rows.Add(row_content);
 
                 // update the RNG
                 RNG = CodeRandomness.AdvanceRNG(RNG);
@@ -368,6 +390,16 @@ namespace MKDD_TAS_Tool
         }
 
         private void comboBox11_SelectedIndexChanged_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox1_TextChanged_1(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label7_Click(object sender, EventArgs e)
         {
 
         }

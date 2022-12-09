@@ -45,6 +45,8 @@ namespace MKDD_TAS_Tool
     }
     public class ItemData
     {
+        public static uint MAX_RNG_Combinations = 4294967295;
+
         // all gettable item names sorted by ID
         public static String[] gettable_item_names = new string[]
         {
@@ -53,7 +55,7 @@ namespace MKDD_TAS_Tool
             "Star",
             "Chomp",
             "Goldshroom",
-            "Blue Shell",
+            "Blue",
             "Triple Shrooms",
         };
         public static Dictionary<String, uint> items_dict = new Dictionary<string, uint>()
@@ -71,7 +73,7 @@ namespace MKDD_TAS_Tool
             { "Lightning", 0x0A },
             { "Yoshi Egg", 0x0B },
             { "Goldshroom", 0x0C },
-            { "Blue Shell", 0x0D },
+            { "Blue", 0x0D },
             { "Hearts", 0x0E },
             { "Fake Box", 0x0F },
             // - - - - -
@@ -96,7 +98,7 @@ namespace MKDD_TAS_Tool
         {
             "Green Shell",
             "Red Shell",
-            "Blue Shell",
+            "Blue",
             "Banana",
             "Mushroom",
             "Triple Shrooms",
@@ -127,7 +129,7 @@ namespace MKDD_TAS_Tool
             "Lightning",
             "Yoshi Egg",
             "Goldshroom",       // 0x0C
-            "Blue Shell",
+            "Blue",
             "Hearts",
             "Fake Box",
             "- - -",            // 0x10
