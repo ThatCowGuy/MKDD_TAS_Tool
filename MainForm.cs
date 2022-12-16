@@ -23,7 +23,7 @@ namespace MKDD_TAS_Tool
             else return "Invalid";
         }
 
-        public String[] get_RollsPerPos(uint RNG, uint[][] ProbMatrix, uint[] ColWeightVector)
+        public String[] get_RollsPerPos(uint RNG, uint[][] ProbMatrix, uint[] ColWeightVector, uint driverID)
         {
             // create row string array
             String[] row_content = new String[9];
@@ -41,7 +41,7 @@ namespace MKDD_TAS_Tool
                 // if the result is "Special", replace it by the correct special item
                 if (rolledItem_name == "Special")
                 {
-                    rolledItem_name = ItemData.item_names[CharData.specials_dict[get_selected_char_name(1)]];
+                    rolledItem_name = ItemData.item_names[CharData.specials_dict[get_selected_char_name(driverID)]];
                     rolledItemID = (int)ItemData.item_name_to_ID(rolledItem_name);
                 }
 
@@ -90,7 +90,7 @@ namespace MKDD_TAS_Tool
                 dataGridView1.Columns[col].Width = 90;
 
             // some nice colors
-            dataGridView1.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(255, 200, 200, 200);
+            dataGridView1.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(255, 170, 170, 170);
             dataGridView1.EnableHeadersVisualStyles = false;
             dataGridView1.Columns[0].DefaultCellStyle.BackColor = Color.FromArgb(255, 192, 255, 192);
 
@@ -137,14 +137,38 @@ namespace MKDD_TAS_Tool
             // create row string array
             String[] row_content = new String[9];
             // and start simulating the RNG
-            for (uint i = 0; i < 20; i++)
+            for (int i = 0; i < 10; i++)
             {
-                // get row content fromg RNG simulation
-                row_content = get_RollsPerPos(RNG, ItemProbMatrix_char1, total_column_weight_1);
+                // get row content fromg RNG simulation - character 1
+                row_content = get_RollsPerPos(RNG, ItemProbMatrix_char1, total_column_weight_1, 1);
                 this.dataGridView1.Rows.Add(row_content);
+                // check if there is a special cell color defined for the pull
+                for (int col = 1; col < 9; col++)
+                {
+                    if (ItemData.ItemColor_Dict.ContainsKey(row_content[col]) == true)
+                    {
+                        Color cell_color = ItemData.ItemColor_Dict[row_content[col]];
+                        this.dataGridView1.Rows[(i*2)+0].Cells[col].Style.BackColor = cell_color;
+                    }
+                }
 
-                // WOWIE
-                this.dataGridView1.Rows[0].Cells[1].Style.BackColor = Color.Red;
+                // get row content fromg RNG simulation - character 2
+                row_content = get_RollsPerPos(RNG, ItemProbMatrix_char2, total_column_weight_2, 2);
+                row_content[0] = ""; // removing the RNG entry here bc its a duplicate
+                this.dataGridView1.Rows.Add(row_content);
+                // check if there is a special cell color defined for the pull
+                for (int col = 1; col < 9; col++)
+                {
+                    if (ItemData.ItemColor_Dict.ContainsKey(row_content[col]) == true)
+                    {
+                        Color cell_color = ItemData.ItemColor_Dict[row_content[col]];
+                        this.dataGridView1.Rows[(i*2)+1].Cells[col].Style.BackColor = cell_color;
+                    }
+                }
+
+                // visually divide the different Pulls more
+                this.dataGridView1.Rows[(i * 2) + 1].DividerHeight = 4;
+                //dataGridView1.GridColor = Color.Black;
 
                 // update the RNG
                 RNG = CodeRandomness.AdvanceRNG(RNG);
@@ -199,7 +223,8 @@ namespace MKDD_TAS_Tool
             // create a condition matrix from this
             max_roll = (max_roll - min_roll) + 1;
             String[,] condition_matrix = new string[max_roll, 8];
-            String[,] history_matrix = new string[10, 8];
+            String[,] history_matrix_1 = new string[10, 8];
+            String[,] history_matrix_2 = new string[10, 8];
             Console.WriteLine("Collected Conditions:");
             foreach (BruteforceCondition cond in Conditions)
             {
@@ -211,8 +236,9 @@ namespace MKDD_TAS_Tool
             // init RNG from TextField
             uint RNG = uint.Parse(textBox3.Text.Replace("0x", ""), System.Globalization.NumberStyles.HexNumber);
             // Setup History vals
-            uint[] RNG_history = new uint[10];
-            for (int step = 0; step < 10; step++)
+            int HistoryDepth = 6;
+            uint[] RNG_history = new uint[HistoryDepth];
+            for (int step = 0; step < HistoryDepth; step++)
             {
                 RNG_history[step] = RNG;
             }
@@ -252,18 +278,22 @@ namespace MKDD_TAS_Tool
             }
 
             // create row string array
-            String[] row_content = new String[9];
+            String[] row_content_1 = new String[9];
+            String[] row_content_2 = new String[9];
             uint bruteforce_attempts = 0;
             while (true)
             {
                 // get row content fromg RNG simulation
-                row_content = get_RollsPerPos(RNG, ItemProbMatrix_char1, total_column_weight_1);
+                row_content_1 = get_RollsPerPos(RNG, ItemProbMatrix_char1, total_column_weight_1, 1);
+                row_content_2 = get_RollsPerPos(RNG, ItemProbMatrix_char2, total_column_weight_2, 2);
 
                 // populate lowest history matrix row with the new content
-                RNG_history[(10 - 1)] = RNG;
+                RNG_history[(HistoryDepth - 1)] = RNG;
                 for (int pos = 0; pos < 8; pos++)
-                    history_matrix[(10 - 1), pos] = row_content[(pos + 1)];
-
+                {
+                    history_matrix_1[(HistoryDepth - 1), pos] = row_content_1[(pos + 1)];
+                    history_matrix_2[(HistoryDepth - 1), pos] = row_content_2[(pos + 1)];
+                }
                 // compare the history matrix with the condition matrix
                 bool bruteforce_match = true;
                 for (int step = 0; step < max_roll; step++)
@@ -273,8 +303,9 @@ namespace MKDD_TAS_Tool
                         string desired_roll = condition_matrix[(max_roll - 1 - step), pos];
                         if (String.IsNullOrEmpty(desired_roll)) continue;
 
-                        string actual_roll = history_matrix[(10 - 1 - step), pos];
-                        if (desired_roll != actual_roll)
+                        string actual_roll_1 = history_matrix_1[(HistoryDepth - 1 - step), pos];
+                        string actual_roll_2 = history_matrix_2[(HistoryDepth - 1 - step), pos];
+                        if (desired_roll != actual_roll_1 & desired_roll != actual_roll_2)
                         {
                             bruteforce_match = false;
                             break;
@@ -283,8 +314,9 @@ namespace MKDD_TAS_Tool
                 }
                 if (bruteforce_match == true)
                 {
-                    Console.WriteLine(String.Format("MATCH: RNG = {0:x}", RNG_history[0]));
-                    this.textBox1.Text = String.Format("{0:X}", RNG_history[0]);
+                    uint MatchingRNG = RNG_history[HistoryDepth - max_roll];
+                    Console.WriteLine(String.Format("MATCH: RNG = {0:X}", MatchingRNG));
+                    this.textBox1.Text = String.Format("{0:X}", MatchingRNG);
                     break;
                 }
 
@@ -297,11 +329,14 @@ namespace MKDD_TAS_Tool
                 }
 
                 // step through the history matrix and shift everything up 1 row to update it
-                for (int step = 0; step < (10 - 1); step++)
+                for (int step = 0; step < (HistoryDepth - 1); step++)
                 {
                     RNG_history[step] = RNG_history[(step + 1)];
                     for (int pos = 0; pos < 8; pos++)
-                        history_matrix[step, pos] = history_matrix[(step + 1), pos];
+                    {
+                        history_matrix_1[step, pos] = history_matrix_1[(step + 1), pos];
+                        history_matrix_2[step, pos] = history_matrix_2[(step + 1), pos];
+                    }
                 }
                 // this.dataGridView1.Rows.Add(row_content);
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 
 namespace MKDD_TAS_Tool
 {
@@ -46,6 +47,17 @@ namespace MKDD_TAS_Tool
     public class ItemData
     {
         public static uint MAX_RNG_Combinations = 4294967295;
+
+        public static Dictionary<String, Color> ItemColor_Dict = new Dictionary<String, Color>()
+        {
+            { "Bowser Shell", Color.FromArgb(255, 200, 220, 200) },
+            // - - -
+            { "Star", Color.FromArgb(255, 255, 255, 190) },
+            { "Chomp", Color.FromArgb(255, 220, 220, 220) },
+            // - - -
+            { "Blue", Color.FromArgb(255, 190, 230, 255) },
+            { "Triple Shrooms", Color.FromArgb(255, 255, 200, 200) },
+        };
 
         // all gettable item names sorted by ID
         public static String[] gettable_item_names = new string[]
