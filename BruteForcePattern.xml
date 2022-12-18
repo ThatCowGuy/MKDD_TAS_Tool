@@ -8,25 +8,20 @@
 	</Condition>
 	
 	<Condition>
-		<Pos>3</Pos>
-		<Roll>2</Roll>
-		<Item>Chomp</Item>
-	</Condition>
-	<Condition>
 		<Pos>4</Pos>
 		<Roll>2</Roll>
+		<Item>Star</Item>
+	</Condition>
+
+	<Condition>
+		<Pos>4</Pos>
+		<Roll>3</Roll>
 		<Item>Triple Shrooms</Item>
 	</Condition>
-	
 	<Condition>
-        <Pos>3</Pos>
+		<Pos>3</Pos>
 		<Roll>3</Roll>
-        <Item>Chomp</Item>
-    </Condition>
-	<Condition>
-		<Pos>4</Pos>
-		<Roll>3</Roll>
-		<Item>Star</Item>
+		<Item>Chomp</Item>
 	</Condition>
 	
 </BruteForcePattern>

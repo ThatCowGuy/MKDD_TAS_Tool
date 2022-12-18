@@ -61,7 +61,7 @@ namespace MKDD_TAS_Tool
             return convert_fp2unsigned(max * shiftRNGcnvtoFloat(seed));
         }
 
-        public static int calc_ItemRoll(uint Seed, uint[][] ItemProbMatrix, int pos, uint maxItemCnt) // maxItemCnt is annoying me still
+        public static int calc_ItemRoll(uint Seed, uint[,] ItemProbMatrix, int pos, uint maxItemCnt) // maxItemCnt is annoying me still
         {
             // get the actual random number
             uint randomNum = getRandomMax(Seed, maxItemCnt - 1);
@@ -72,7 +72,7 @@ namespace MKDD_TAS_Tool
             // iterate over the possible items
             for (rollableItemID = 0; rollableItemID < 10; rollableItemID++)
             {
-                integrated_weight += ItemProbMatrix[rollableItemID][pos];
+                integrated_weight += ItemProbMatrix[rollableItemID, pos];
                 // check if we stepped over the randomNum threshold
                 if (randomNum < integrated_weight) return rollableItemID;
             }

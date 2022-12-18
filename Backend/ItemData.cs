@@ -57,6 +57,7 @@ namespace MKDD_TAS_Tool
             // - - -
             { "Blue", Color.FromArgb(255, 190, 230, 255) },
             { "Triple Shrooms", Color.FromArgb(255, 255, 200, 200) },
+            { "Invalid Roll", Color.FromArgb(255, 255, 0, 0) },
         };
 
         // all gettable item names sorted by ID
@@ -122,7 +123,10 @@ namespace MKDD_TAS_Tool
 
         public static uint item_name_to_ID(string item_name)
         {
-            return items_dict[item_name];
+            if (items_dict.ContainsKey(item_name) == true)
+                return items_dict[item_name];
+
+            else return 0;
         }
 
         // all item names sorted by ID
