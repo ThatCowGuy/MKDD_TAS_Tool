@@ -33,11 +33,29 @@ namespace MKDD_TAS_Tool
         private uint[] total_column_weight_1 = new uint[8];
         private uint[] total_column_weight_2 = new uint[8];
         private uint RNG;
-        private uint condition_count;
-        private String[,] condition_matrix;
+        private List<BruteforceCondition> Conditions;
 
         private String selected_driver_1;
         private String selected_driver_2;
+
+        private void print_HistoryMatrix_partial(int[,,] history_matrix)
+        {
+            for (int i = 0; i < 6; i++)
+            {
+                Console.WriteLine(String.Format("{0:X} {1:X} {2:X} {3:X}",
+                    history_matrix[0, i, 2],
+                    history_matrix[0, i, 3],
+                    history_matrix[0, i, 4],
+                    history_matrix[0, i, 5]));
+                Console.WriteLine(String.Format("{0:X} {1:X} {2:X} {3:X}",
+                    history_matrix[1, i, 2],
+                    history_matrix[1, i, 3],
+                    history_matrix[1, i, 4],
+                    history_matrix[1, i, 5]));
+                Console.WriteLine("------");
+            }
+            Console.WriteLine("=========");
+        }
 
         private void HeavyOperation()
         {
@@ -45,8 +63,7 @@ namespace MKDD_TAS_Tool
 
             // Setup History vals
             int HistoryDepth = 6;
-            String[,] history_matrix_1 = new string[HistoryDepth, 8];
-            String[,] history_matrix_2 = new string[HistoryDepth, 8];
+            int[,,] history_matrix = new int[2, HistoryDepth, 8];
             uint[] RNG_history = new uint[HistoryDepth];
             for (int step = 0; step < HistoryDepth; step++)
             {
@@ -54,34 +71,45 @@ namespace MKDD_TAS_Tool
             }
 
             // create row string array
-            String[] row_content_1 = new String[9];
-            String[] row_content_2 = new String[9];
+            int[] row_content_1 = new int[8];
+            int[] row_content_2 = new int[8];
             uint bruteforce_attempts = 0;
             while (true)
             {
                 // get row content fromg RNG simulation
-                row_content_1 = get_RollsPerPos(this.RNG, this.ItemProbMatrix_char1, this.total_column_weight_1, selected_driver_1);
-                row_content_2 = get_RollsPerPos(this.RNG, this.ItemProbMatrix_char2, this.total_column_weight_2, selected_driver_2);
+                row_content_1 = get_RollsPerPos_ItemIDs(this.RNG, this.ItemProbMatrix_char1, this.total_column_weight_1, this.selected_driver_1);
+                row_content_2 = get_RollsPerPos_ItemIDs(this.RNG, this.ItemProbMatrix_char2, this.total_column_weight_2, this.selected_driver_2);
 
                 // populate lowest history matrix row with the new content
                 RNG_history[(HistoryDepth - 1)] = RNG;
                 for (int pos = 0; pos < 8; pos++)
                 {
-                    history_matrix_1[(HistoryDepth - 1), pos] = row_content_1[(pos + 1)];
-                    history_matrix_2[(HistoryDepth - 1), pos] = row_content_2[(pos + 1)];
+                    history_matrix[0, (HistoryDepth - 1), pos] = row_content_1[pos];
+                    history_matrix[1, (HistoryDepth - 1), pos] = row_content_2[pos];
                 }
                 // compare the history matrix with the condition matrix
                 bool bruteforce_match = true;
-                for (int step = 0; step < this.condition_count; step++)
-                {
-                    for (int pos = 0; pos < 5; pos++)
-                    {
-                        string desired_roll = this.condition_matrix[(this.condition_count - 1 - step), pos];
-                        if (String.IsNullOrEmpty(desired_roll)) continue;
 
-                        string actual_roll_1 = history_matrix_1[(HistoryDepth - 1 - step), pos];
-                        string actual_roll_2 = history_matrix_2[(HistoryDepth - 1 - step), pos];
-                        if (desired_roll != actual_roll_1 & desired_roll != actual_roll_2)
+                foreach (BruteforceCondition cond in this.Conditions)
+                {
+                    // check if we want a specific driver first
+                    if (cond.driver_id > 0)
+                    {
+                        int actual_roll = history_matrix[(cond.driver_id - 1), cond.roll, (cond.pos - 1)];
+                        if (actual_roll != cond.item_id)
+                        {
+                            bruteforce_match = false;
+                            break;
+                        }
+                    }
+                    // cond.driver_id == 0, so we dont care abt the driver
+                    else
+                    {
+                        int actual_roll_1 = history_matrix[0, cond.roll, (cond.pos - 1)];
+                        int actual_roll_2 = history_matrix[1, cond.roll, (cond.pos - 1)];
+                        //print_HistoryMatrix_partial(history_matrix);
+
+                        if (actual_roll_1 != cond.item_id & actual_roll_2 != cond.item_id)
                         {
                             bruteforce_match = false;
                             break;
@@ -90,21 +118,21 @@ namespace MKDD_TAS_Tool
                 }
                 if (bruteforce_match == true)
                 {
-                    this.RNG = RNG_history[HistoryDepth - this.condition_count];
+                    this.RNG = RNG_history[0];
                     Console.WriteLine(String.Format("MATCH: RNG = {0:X}", this.RNG));
                     this.Invoke(this.finishStatusDelegate);
                     break;
                 }
 
-                bruteforce_attempts++;
                 if (bruteforce_attempts % 100000 == 0)
                 {
                     double percentage = (100.0 * bruteforce_attempts) / ItemData.MAX_RNG_Combinations;
-                    Console.WriteLine(String.Format("{0:n0} Attempts ({1:0.00}%) cur_RNG: {0:X}", bruteforce_attempts, percentage, RNG));
+                    Console.WriteLine(String.Format("{0:n0} Attempts ({1:0.00}%) cur_RNG: 0x{2:X}", bruteforce_attempts, percentage, this.RNG));
 
                     this.UpdateStatusMSG = String.Format("{0:n0} ({1:0.00}%)", bruteforce_attempts, percentage);
                     this.Invoke(this.updateStatusDelegate);
                 }
+                bruteforce_attempts++;
 
                 // step through the history matrix and shift everything up 1 row to update it
                 for (int step = 0; step < (HistoryDepth - 1); step++)
@@ -112,8 +140,8 @@ namespace MKDD_TAS_Tool
                     RNG_history[step] = RNG_history[(step + 1)];
                     for (int pos = 0; pos < 8; pos++)
                     {
-                        history_matrix_1[step, pos] = history_matrix_1[(step + 1), pos];
-                        history_matrix_2[step, pos] = history_matrix_2[(step + 1), pos];
+                        history_matrix[0, step, pos] = history_matrix[0, (step + 1), pos];
+                        history_matrix[1, step, pos] = history_matrix[1, (step + 1), pos];
                     }
                 }
 
@@ -123,6 +151,8 @@ namespace MKDD_TAS_Tool
         }
         private void UpdateStatus()
         {
+            this.textBox1.Text = "Searching...";
+            this.textBox1.Update();
             this.textBox2.Text = this.UpdateStatusMSG;
             this.textBox2.Update();
         }
@@ -132,7 +162,7 @@ namespace MKDD_TAS_Tool
             this.textBox1.Update();
         }
 
-        public String[] get_RollsPerPos(uint RNG, uint[,] ProbMatrix, uint[] ColWeightVector, String driver_name)
+        public String[] get_RollsPerPos_ItemNames(uint RNG, uint[,] ProbMatrix, uint[] ColWeightVector, String driver_name)
         {
             // create row string array
             String[] row_content = new String[9];
@@ -174,6 +204,46 @@ namespace MKDD_TAS_Tool
 
                 // rolled items into the others
                 row_content[pos + 1] = rolledItem_name;
+            }
+            // return resulting content array
+            return row_content;
+        }
+        public int[] get_RollsPerPos_ItemIDs(uint RNG, uint[,] ProbMatrix, uint[] ColWeightVector, String driver_name)
+        {
+            // create row string array
+            int[] row_content = new int[8];
+
+            // Get ItemRolls for every Position
+            for (int pos = 0; pos < 8; pos++)
+            {
+                int rolledItemID = CodeRandomness.calc_ItemRoll(RNG, ProbMatrix, pos, ColWeightVector[pos]);
+                String rolledItem_name;
+
+                // if the result is "Special", replace it by the correct special item
+                if (rolledItemID == 0x9)
+                {
+                    rolledItem_name = ItemData.item_names[CharData.specials_dict[driver_name]];
+                    rolledItemID = (int)ItemData.item_name_to_ID(rolledItem_name);
+                }
+                else
+                {
+                    // a normal item was rolled, convert it from rollableID to itemID
+                    rolledItem_name = ItemData.rollable_items_names[rolledItemID];
+                    rolledItemID = (int)ItemData.item_name_to_ID(rolledItem_name);
+                }
+
+                // special check for Triple Reds only if not Pos#1
+                if (rolledItemID == 0x13 & pos > 0)
+                {
+                    // advance RNG once more for this extra check (temporarily!!!)
+                    uint shellRNG = CodeRandomness.AdvanceRNG(RNG);
+                    // 40% chance of converting to Triple Reds
+                    if (0.4 < CodeRandomness.shiftRNGcnvtoFloat(shellRNG))
+                        rolledItemID = 0x11;
+                }
+
+                // rolled items into the others
+                row_content[pos] = rolledItemID;
             }
             // return resulting content array
             return row_content;
@@ -256,7 +326,7 @@ namespace MKDD_TAS_Tool
             for (int i = 0; i < 10; i++)
             {
                 // get row content fromg RNG simulation - character 1
-                row_content = get_RollsPerPos(this.RNG, this.ItemProbMatrix_char1, this.total_column_weight_1, selected_driver_1);
+                row_content = get_RollsPerPos_ItemNames(this.RNG, this.ItemProbMatrix_char1, this.total_column_weight_1, selected_driver_1);
                 this.dataGridView1.Rows.Add(row_content);
                 // check if there is a special cell color defined for the pull
                 for (int col = 1; col < 9; col++)
@@ -269,7 +339,7 @@ namespace MKDD_TAS_Tool
                 }
 
                 // get row content fromg RNG simulation - character 2
-                row_content = get_RollsPerPos(this.RNG, this.ItemProbMatrix_char2, this.total_column_weight_2, selected_driver_2);
+                row_content = get_RollsPerPos_ItemNames(this.RNG, this.ItemProbMatrix_char2, this.total_column_weight_2, selected_driver_2);
                 row_content[0] = ""; // removing the RNG entry here bc its a duplicate
                 this.dataGridView1.Rows.Add(row_content);
                 // check if there is a special cell color defined for the pull
@@ -294,9 +364,10 @@ namespace MKDD_TAS_Tool
         private void button2_Click(object sender, EventArgs e)
         {
             // create a new, empty list of bruteforcer conditions
-            List<BruteforceCondition> Conditions = new List<BruteforceCondition>();
+            this.Conditions = new List<BruteforceCondition>();
             uint xml_pos = 0;
             uint xml_roll = 0;
+            uint xml_driver_id = 0; // 0 = dont care, 1 = 1, 2 = 2
             string xml_item_name = "";
 
             // open the pattern XML and readout the conditions
@@ -314,6 +385,9 @@ namespace MKDD_TAS_Tool
                     case "Item":
                         xml_item_name = reader.ReadString();
                         break;
+                    case "Driver":
+                        xml_driver_id = UInt32.Parse(reader.ReadString());
+                        break;
                     case "Condition":
                         if (reader.NodeType == XmlNodeType.EndElement)
                         {
@@ -321,16 +395,19 @@ namespace MKDD_TAS_Tool
                             BruteforceCondition cond = new BruteforceCondition();
                             cond.pos = xml_pos;
                             cond.roll = xml_roll;
+                            cond.driver_id = xml_driver_id;
                             cond.item_id = ItemData.item_name_to_ID(xml_item_name);
+                            xml_driver_id = 0; // restore default
                             // and add it to the List IF its not 0 (Green Shell, but we'd never bruteforce for that)
                             if (cond.item_id > 0)
                             {
-                                Conditions.Add(cond);
+                                this.Conditions.Add(cond);
                             }
                             else
                             {
                                 Console.WriteLine(String.Format("Ruh-Oh! A Condition couldnt be parsed: ItemName={0}", xml_item_name));
-                                this.textBox2.Text = String.Format("XML-Parse Error: {0}", xml_item_name);
+                                this.textBox2.Text = String.Format("XMLR saw: {0}", xml_item_name);
+                                this.Conditions = new List<BruteforceCondition>();
                                 return;
                             }
                         }
@@ -340,21 +417,15 @@ namespace MKDD_TAS_Tool
 
             // init min + max to find them from the conditions list
             uint min_roll = Int32.MaxValue;
-            uint max_roll = 0;
             foreach (BruteforceCondition cond in Conditions)
             {
                 if (cond.roll < min_roll) min_roll = cond.roll;
-                if (cond.roll > max_roll) max_roll = cond.roll;
             }
-            // create the condition matrix from this
-            this.condition_count = (max_roll - min_roll) + 1;
-            this.condition_matrix = new string[this.condition_count, 8];
             Console.WriteLine("Collected Conditions:");
             foreach (BruteforceCondition cond in Conditions)
             {
-                Console.WriteLine(String.Format("{0} at Pos{1} on Roll={2}", ItemData.item_names[cond.item_id], cond.pos, cond.roll));
-                // adjust all rolls so the new min becomes 0
-                this.condition_matrix[(cond.roll - min_roll), (cond.pos - 1)] = ItemData.item_names[cond.item_id];
+                cond.roll -= min_roll;
+                Console.WriteLine(String.Format("{0} at #{1} on Roll-{2} For Driver #{3}", ItemData.item_names[cond.item_id], cond.pos, cond.roll, cond.driver_id));
             }
 
             // init RNG from TextField
@@ -417,6 +488,9 @@ namespace MKDD_TAS_Tool
             Random generator = new Random();
             this.RNG = (uint)(generator.NextDouble() * 0x100000000);
             this.textBox3.Text = String.Format("{0:X}", this.RNG);
+
+            // force button1 to be clicked
+            this.button1_Click(null, EventArgs.Empty);
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)

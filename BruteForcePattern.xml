@@ -1,27 +1,39 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 
 <BruteForcePattern>
-    <Condition>
-		<Pos>4</Pos>
-		<Roll>1</Roll>
-		<Item>Blue</Item>
-	</Condition>
 	
 	<Condition>
+		<Pos>3</Pos>
+		<Roll>1</Roll>
+		<Driver>1</Driver>
+		<Item>Chomp</Item>
+	</Condition>
+	
+    <Condition>
 		<Pos>4</Pos>
 		<Roll>2</Roll>
+		<Driver>2</Driver>
+		<Item>Blue</Item>
+	</Condition>
+	<Condition>
+		<Pos>5</Pos>
+		<Roll>2</Roll>
+		<Driver>0</Driver>
+		<Item>Triple Shrooms</Item>
+	</Condition>
+
+	<Condition>
+		<Pos>5</Pos>
+		<Roll>3</Roll>
+		<Driver>0</Driver>
 		<Item>Star</Item>
 	</Condition>
 
 	<Condition>
-		<Pos>4</Pos>
-		<Roll>3</Roll>
-		<Item>Triple Shrooms</Item>
-	</Condition>
-	<Condition>
 		<Pos>3</Pos>
-		<Roll>3</Roll>
+		<Roll>4</Roll>
+		<Driver>1</Driver>
 		<Item>Chomp</Item>
 	</Condition>
-	
+
 </BruteForcePattern>

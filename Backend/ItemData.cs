@@ -8,6 +8,7 @@ namespace MKDD_TAS_Tool
     {
         public uint pos;
         public uint roll;
+        public uint driver_id;
         public uint item_id;
     }
 
