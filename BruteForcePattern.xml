@@ -7,64 +7,36 @@
 <!-- 1 == Shock Lock + Special Lock -->
 <!-- 2 == Shock Lock + Blue Lock -->
 <!-- 3 == Shock Lock + Star Lock -->
+<!-- 4 == Shock Lock + Shroom Lock -->
+<!-- 5 == Shock Lock + Triple Shroom Lock -->
 
 <BruteForcePattern>
 	
 	<!--ROLL 1-->
 	<Condition>
 		<Roll>0</Roll>
-		<Driver>1</Driver>
-		<Pos>4</Pos>
+		<Driver>0</Driver>
+		<Pos>3</Pos>
 		<Reality>0</Reality>
-		<Item>Star</Item>
+		<Item>Triple Shrooms</Item>
 	</Condition>
 	
+	<Condition>
+		<Roll>0</Roll>
+		<Driver>0</Driver>
+		<Pos>4</Pos>
+		<Reality>0</Reality>
+		<Item>Blue</Item>
+	</Condition>
 	
 	
 	<!--ROLL 2-->
-	<Condition>
-		<Roll>1</Roll>
-		<Driver>2</Driver>
-		<Pos>3</Pos>
-		<Reality>0</Reality>
-		<Item>Mushroom</Item>
-	</Condition>
-
-	<Condition>
-		<Roll>1</Roll>
-		<Driver>2</Driver>
-		<Pos>4</Pos>
-		<Reality>3</Reality>
-		<Item>Triple Shrooms</Item>
-	</Condition>
 
 	<!--ROLL 3-->
 
-	<Condition>
-		<Roll>2</Roll>
-		<Driver>1</Driver>
-		<Pos>3</Pos>
-		<Reality>0</Reality>
-		<Item>Chomp</Item>
-	</Condition>
-
 	<!--ROLL 4-->
-	<Condition>
-		<Roll>3</Roll>
-		<Driver>1</Driver>
-		<Pos>3</Pos>
-		<Reality>2</Reality>
-		<Item>Chomp</Item>
-	</Condition>
 
 	<!--ROLL 5-->
-	<Condition>
-		<Roll>4</Roll>
-		<Driver>1</Driver>
-		<Pos>3</Pos>
-		<Reality>2</Reality>
-		<Item>Chomp</Item>
-	</Condition>
 
 	<!--ROLL 6-->
 

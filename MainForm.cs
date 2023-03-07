@@ -48,8 +48,17 @@ namespace MKDD_TAS_Tool
         private uint[] total_column_weight_1_NoShock_NoStar = new uint[8];
         private uint[] total_column_weight_2_NoShock_NoStar = new uint[8];
 
-        private uint[,][,] ItemProbMatrix_List;
-        private uint[,][,] TotalColWeight_List;
+        private uint[,] ItemProbMatrix_char1_NoShock_NoShroom = new uint[10, 8];
+        private uint[,] ItemProbMatrix_char2_NoShock_NoShroom = new uint[10, 8];
+        private uint[] total_column_weight_1_NoShock_NoShroom = new uint[8];
+        private uint[] total_column_weight_2_NoShock_NoShroom = new uint[8];
+
+        private uint[,] ItemProbMatrix_char1_NoShock_NoTripleShroom = new uint[10, 8];
+        private uint[,] ItemProbMatrix_char2_NoShock_NoTripleShroom = new uint[10, 8];
+        private uint[] total_column_weight_1_NoShock_NoTripleShroom = new uint[8];
+        private uint[] total_column_weight_2_NoShock_NoTripleShroom = new uint[8];
+
+        private uint[] simulated_realities = new uint[6];
 
         private uint RNG;
         private int max_roll = 0;
@@ -82,7 +91,7 @@ namespace MKDD_TAS_Tool
             this.UpdateStatusMSG = "Starting...";
 
             // Setup History vals
-            int HistoryDepth = 6;
+            int HistoryDepth = 10;
             int[,,,] history_matrix = new int[2, 5, 4, HistoryDepth]; // Driver, Position, Reality, HistDepth
             uint[] RNG_history = new uint[HistoryDepth];
             for (int step = 0; step < HistoryDepth; step++)
@@ -104,8 +113,11 @@ namespace MKDD_TAS_Tool
             {
                 if (Hist_IDX < 0) Hist_IDX = (HistoryDepth - 1);
 
-                for (uint reality = 0; reality < 4; reality++)
+                for (uint reality = 0; reality < 6; reality++)
                 {
+                    // skip realities that dont need to be simulated
+                    if (this.simulated_realities[reality] == 0) continue;
+
                     // get row content from RNG simulation
                     row_content_1 = get_RollsPerPos_ItemIDs(this.RNG, get_prob_matrix(1, reality), get_col_weight(1, reality), this.selected_driver_1);
                     row_content_2 = get_RollsPerPos_ItemIDs(this.RNG, get_prob_matrix(2, reality), get_col_weight(2, reality), this.selected_driver_2);
@@ -360,12 +372,14 @@ namespace MKDD_TAS_Tool
             // and start simulating the RNG
             for (int i = 0; i < 10; i++)
             {
-                for (uint reality = 0; reality < 4; reality++)
+                for (uint reality = 0; reality < 6; reality++)
                 {
                     string[] RNG_string = { RNG.ToString("X8") };
                     if (reality == 1) RNG_string[0] = "No Special";
                     if (reality == 2) RNG_string[0] = "No Blue";
                     if (reality == 3) RNG_string[0] = "No Star";
+                    if (reality == 4) RNG_string[0] = "No Mushroom";
+                    if (reality == 5) RNG_string[0] = "No TripShrooms";
 
                     // get row content from RNG simulation - character 1
                     row_content_1 = get_RollsPerPos_ItemNames(this.RNG, get_prob_matrix(1, reality), get_col_weight(1, reality), selected_driver_1);
@@ -386,10 +400,10 @@ namespace MKDD_TAS_Tool
                         }
                     }
                 }
-                this.dataGridView1.Rows[this.dataGridView1.Rows.Count - 4].Cells[0].Style.BackColor = Color.FromArgb(255, 255, 200, 150);
+                this.dataGridView1.Rows[this.dataGridView1.Rows.Count - 6].Cells[0].Style.BackColor = Color.FromArgb(255, 255, 200, 150);
 
                 // visually divide the different Pulls more
-                this.dataGridView1.Rows[(i * 4) + 3].DividerHeight = 4;
+                this.dataGridView1.Rows[(i * 6) + 5].DividerHeight = 4;
                 // dataGridView1.GridColor = Color.Black;
 
                 // update the RNG
@@ -410,7 +424,11 @@ namespace MKDD_TAS_Tool
 
             // open the pattern XML and readout the conditions
             XmlReader PatternFile = XmlReader.Create("../../BruteForcePattern.xml");
-            
+
+            // reset the simulated realities
+            for (int i = 0; i < 6; i++)
+                this.simulated_realities[i] = 0;
+
             while (PatternFile.Read())
             {
                 switch (PatternFile.Name.ToString())
@@ -446,6 +464,8 @@ namespace MKDD_TAS_Tool
                             if (cond.item_id > 0)
                             {
                                 this.Conditions.Add(cond);
+                                // add this reality to the simulated ones
+                                this.simulated_realities[cond.reality] = 1;
                             }
                             else
                             {
@@ -765,6 +785,74 @@ namespace MKDD_TAS_Tool
                     this.total_column_weight_2_NoShock_NoStar[pos] += this.ItemProbMatrix_char2_NoShock_NoStar[rollableItemID, pos];
                 }
             }
+
+            // set up the probability matrices
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 4, ItemData.item_wNONE);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 5, ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 7, ItemData.item_wNONE);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_1]]);
+            // and #2
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 4, ItemData.item_wNONE);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 5, ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 7, ItemData.item_wNONE);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_2]]);
+            // pre-calculate the total weight for each column
+            for (int pos = 0; pos < 8; pos++)
+            {
+                this.total_column_weight_1_NoShock_NoShroom[pos] = 0;
+                this.total_column_weight_2_NoShock_NoShroom[pos] = 0;
+                for (int rollableItemID = 0; rollableItemID < this.ItemProbMatrix_char1_NoShock_NoShroom.GetLength(0); rollableItemID++)
+                {
+                    this.total_column_weight_1_NoShock_NoShroom[pos] += this.ItemProbMatrix_char1_NoShock_NoShroom[rollableItemID, pos];
+                    this.total_column_weight_2_NoShock_NoShroom[pos] += this.ItemProbMatrix_char2_NoShock_NoShroom[rollableItemID, pos];
+                }
+            }
+
+            // set up the probability matrices
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 4, ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 5, ItemData.item_wNONE);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 7, ItemData.item_wNONE);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_1]]);
+            // and #2
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 4, ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 5, ItemData.item_wNONE);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 7, ItemData.item_wNONE);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
+            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_2]]);
+            // pre-calculate the total weight for each column
+            for (int pos = 0; pos < 8; pos++)
+            {
+                this.total_column_weight_1_NoShock_NoTripleShroom[pos] = 0;
+                this.total_column_weight_2_NoShock_NoTripleShroom[pos] = 0;
+                for (int rollableItemID = 0; rollableItemID < this.ItemProbMatrix_char1_NoShock_NoTripleShroom.GetLength(0); rollableItemID++)
+                {
+                    this.total_column_weight_1_NoShock_NoTripleShroom[pos] += this.ItemProbMatrix_char1_NoShock_NoTripleShroom[rollableItemID, pos];
+                    this.total_column_weight_2_NoShock_NoTripleShroom[pos] += this.ItemProbMatrix_char2_NoShock_NoTripleShroom[rollableItemID, pos];
+                }
+            }
         }
 
         public uint[,] get_prob_matrix(uint driver, uint reality)
@@ -775,6 +863,8 @@ namespace MKDD_TAS_Tool
                 if (reality == 1) return this.ItemProbMatrix_char1_NoShock_NoSpecial;
                 if (reality == 2) return this.ItemProbMatrix_char1_NoShock_NoBlue;
                 if (reality == 3) return this.ItemProbMatrix_char1_NoShock_NoStar;
+                if (reality == 4) return this.ItemProbMatrix_char1_NoShock_NoShroom;
+                if (reality == 5) return this.ItemProbMatrix_char1_NoShock_NoTripleShroom;
             }
             if (driver == 2)
             {
@@ -782,6 +872,8 @@ namespace MKDD_TAS_Tool
                 if (reality == 1) return this.ItemProbMatrix_char2_NoShock_NoSpecial;
                 if (reality == 2) return this.ItemProbMatrix_char2_NoShock_NoBlue;
                 if (reality == 3) return this.ItemProbMatrix_char2_NoShock_NoStar;
+                if (reality == 4) return this.ItemProbMatrix_char2_NoShock_NoShroom;
+                if (reality == 5) return this.ItemProbMatrix_char2_NoShock_NoTripleShroom;
             }
             return null;
         }
@@ -793,6 +885,8 @@ namespace MKDD_TAS_Tool
                 if (reality == 1) return this.total_column_weight_1_NoShock_NoSpecial;
                 if (reality == 2) return this.total_column_weight_1_NoShock_NoBlue;
                 if (reality == 3) return this.total_column_weight_1_NoShock_NoStar;
+                if (reality == 4) return this.total_column_weight_1_NoShock_NoShroom;
+                if (reality == 5) return this.total_column_weight_1_NoShock_NoTripleShroom;
             }
             if (driver == 2)
             {
@@ -800,6 +894,8 @@ namespace MKDD_TAS_Tool
                 if (reality == 1) return this.total_column_weight_2_NoShock_NoSpecial;
                 if (reality == 2) return this.total_column_weight_2_NoShock_NoBlue;
                 if (reality == 3) return this.total_column_weight_2_NoShock_NoStar;
+                if (reality == 4) return this.total_column_weight_2_NoShock_NoShroom;
+                if (reality == 5) return this.total_column_weight_2_NoShock_NoTripleShroom;
             }
             return null;
         }
