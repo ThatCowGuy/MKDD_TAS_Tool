@@ -1,39 +1,71 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 
+<!--Driver ID : 0 == IDC, 1 == 1, 2 == 2-->
+
+<!-- Reality -->
+<!-- 0 == Shock Lock only -->
+<!-- 1 == Shock Lock + Special Lock -->
+<!-- 2 == Shock Lock + Blue Lock -->
+<!-- 3 == Shock Lock + Star Lock -->
+
 <BruteForcePattern>
 	
+	<!--ROLL 1-->
 	<Condition>
-		<Pos>3</Pos>
-		<Roll>1</Roll>
+		<Roll>0</Roll>
 		<Driver>1</Driver>
-		<Item>Chomp</Item>
+		<Pos>4</Pos>
+		<Reality>0</Reality>
+		<Item>Star</Item>
 	</Condition>
 	
-    <Condition>
-		<Pos>4</Pos>
-		<Roll>2</Roll>
-		<Driver>2</Driver>
-		<Item>Blue</Item>
-	</Condition>
+	
+	
+	<!--ROLL 2-->
 	<Condition>
-		<Pos>5</Pos>
-		<Roll>2</Roll>
-		<Driver>0</Driver>
+		<Roll>1</Roll>
+		<Driver>2</Driver>
+		<Pos>3</Pos>
+		<Reality>0</Reality>
+		<Item>Mushroom</Item>
+	</Condition>
+
+	<Condition>
+		<Roll>1</Roll>
+		<Driver>2</Driver>
+		<Pos>4</Pos>
+		<Reality>3</Reality>
 		<Item>Triple Shrooms</Item>
 	</Condition>
 
-	<Condition>
-		<Pos>5</Pos>
-		<Roll>3</Roll>
-		<Driver>0</Driver>
-		<Item>Star</Item>
-	</Condition>
+	<!--ROLL 3-->
 
 	<Condition>
-		<Pos>3</Pos>
-		<Roll>4</Roll>
+		<Roll>2</Roll>
 		<Driver>1</Driver>
+		<Pos>3</Pos>
+		<Reality>0</Reality>
 		<Item>Chomp</Item>
 	</Condition>
+
+	<!--ROLL 4-->
+	<Condition>
+		<Roll>3</Roll>
+		<Driver>1</Driver>
+		<Pos>3</Pos>
+		<Reality>2</Reality>
+		<Item>Chomp</Item>
+	</Condition>
+
+	<!--ROLL 5-->
+	<Condition>
+		<Roll>4</Roll>
+		<Driver>1</Driver>
+		<Pos>3</Pos>
+		<Reality>2</Reality>
+		<Item>Chomp</Item>
+	</Condition>
+
+	<!--ROLL 6-->
 
 </BruteForcePattern>

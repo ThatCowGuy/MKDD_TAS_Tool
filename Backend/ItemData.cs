@@ -6,9 +6,10 @@ namespace MKDD_TAS_Tool
 {
     public class BruteforceCondition
     {
-        public uint pos;
-        public uint roll;
         public uint driver_id;
+        public uint pos;
+        public uint reality;
+        public uint roll;
         public uint item_id;
     }
 
@@ -53,11 +54,13 @@ namespace MKDD_TAS_Tool
         {
             { "Bowser Shell", Color.FromArgb(255, 200, 220, 200) },
             // - - -
+            { "Mushroom", Color.FromArgb(255, 255, 230, 230) },
+            // - - -
             { "Star", Color.FromArgb(255, 255, 255, 190) },
             { "Chomp", Color.FromArgb(255, 220, 220, 220) },
             // - - -
-            { "Blue", Color.FromArgb(255, 190, 230, 255) },
-            { "Triple Shrooms", Color.FromArgb(255, 255, 200, 200) },
+            { "Blue", Color.FromArgb(255, 180, 210, 255) },
+            { "Triple Shrooms", Color.FromArgb(255, 255, 180, 180) },
             { "Invalid Roll", Color.FromArgb(255, 255, 0, 0) },
         };
 
@@ -84,7 +87,7 @@ namespace MKDD_TAS_Tool
             { "Chomp", 0x07 },
             { "Bomb", 0x08 },
             { "Red Fire", 0x09 },
-            { "Lightning", 0x0A },
+            { "Shock", 0x0A },
             { "Yoshi Egg", 0x0B },
             { "Goldshroom", 0x0C },
             { "Blue", 0x0D },
@@ -106,6 +109,13 @@ namespace MKDD_TAS_Tool
             // - - - - -
             // - - - - -
         };
+        public static Dictionary<String, uint> realities = new Dictionary<string, uint>()
+        {
+            { "Default", 0x00 },
+            { "No Special", 0x01 },
+            { "No Blue", 0x02 },
+            { "No Star", 0x03 },
+        };
 
         // as sorted ingame in the RNG get func... hopefully
         public static String[] rollable_items_names = new string[]
@@ -117,7 +127,7 @@ namespace MKDD_TAS_Tool
             "Mushroom",
             "Triple Shrooms",
             "Star",
-            "Lightning",
+            "Shock",
             "Fake Box",
             "Special"
         };
@@ -128,6 +138,17 @@ namespace MKDD_TAS_Tool
                 return items_dict[item_name];
 
             else return 0;
+        }
+        public static uint item_name_to_rollable_ID(string item_name)
+        {
+            if (item_name == "Chomp") item_name = "Special";
+            if (item_name == "Bowser Shell") item_name = "Special";
+            if (item_name == "Goldshroom") item_name = "Special";
+
+            for (uint rollableItemID = 0; rollableItemID < 10; rollableItemID++)
+                if (ItemData.rollable_items_names[rollableItemID] == item_name) return rollableItemID;
+
+            return 0;
         }
 
         // all item names sorted by ID
@@ -143,7 +164,7 @@ namespace MKDD_TAS_Tool
             "Chomp",
             "Bomb",             // 0x08
             "Red Fire",
-            "Lightning",
+            "Shock",
             "Yoshi Egg",
             "Goldshroom",       // 0x0C
             "Blue",
@@ -167,37 +188,37 @@ namespace MKDD_TAS_Tool
         };
 
         // all item weights sorted by ID (need to pre-init all of them like this because C# is ass ?)
-        public static uint[] item_w00 = new uint[] { 100, 60, 45, 10, 0, 0, 0, 0 };        // 0x00
-        public static uint[] item_w01 = new uint[] { 20, 50, 100, 100, 100, 100, 50, 0 };
-        public static uint[] item_w02 = new uint[] { 0, 45, 60, 75, 70, 50, 40, 20 };
-        public static uint[] item_w03 = new uint[] { 70, 35, 15, 5, 0, 0, 0, 0 };
-        public static uint[] item_w04 = new uint[] { 120, 100, 90, 60, 30, 0, 0, 0 };      // 0x04
-        public static uint[] item_w05 = new uint[] { 0, 40, 60, 70, 60, 35, 10, 0 };
-        public static uint[] item_w06 = new uint[] { 0, 0, 0, 10, 20, 30, 40, 40 };
-        public static uint[] item_w07 = new uint[] { 0, 0, 1, 3, 20, 20, 130, 180 };
-        public static uint[] item_w08 = new uint[] { 20, 60, 100, 100, 100, 100, 60, 0 };  // 0x08
-        public static uint[] item_w09 = new uint[] { 0, 60, 100, 100, 100, 100, 60, 0 };
-        public static uint[] item_w0A = new uint[] { 0, 0, 0, 0, 0, 10, 20, 30 };
-        public static uint[] item_w0B = new uint[] { 40, 70, 80, 80, 80, 70, 60, 0 };
-        public static uint[] item_w0C = new uint[] { 0, 3, 10, 30, 50, 80, 100, 120 };     // 0x0C
-        public static uint[] item_w0D = new uint[] { 0, 0, 0, 10, 15, 20, 20, 20 };
-        public static uint[] item_w0E = new uint[] { 0, 1, 3, 10, 30, 90, 110, 130 };
-        public static uint[] item_w0F = new uint[] { 30, 20, 10, 0, 0, 0, 0, 0 };
-        public static uint[] item_w10 = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };             // 0x10
-        public static uint[] item_w11 = new uint[] { 20, 50, 100, 100, 100, 100, 50, 0 };
-        public static uint[] item_w12 = new uint[] { 0, 0, 10, 20, 35, 55, 70, 90 };
-        public static uint[] item_w13 = new uint[] { 20, 50, 100, 100, 100, 100, 50, 0 };  // assumed equal to triple greens
-        public static uint[] item_w14 = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };             // 0x14
-        public static uint[] item_w15 = new uint[] { 0, 60, 100, 100, 100, 100, 60, 0 };   // assumed equal to red fire
-        public static uint[] item_w16 = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };
-        public static uint[] item_w17 = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };
-        public static uint[] item_w18 = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };             // 0x18
-        public static uint[] item_w19 = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };
-        public static uint[] item_w1A = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };
-        public static uint[] item_w1B = new uint[] { 40, 70, 80, 80, 80, 70, 60, 0 };      // assumed equal to yoshi egg
-        public static uint[] item_w1C = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };             // 0x1C
-        public static uint[] item_w1D = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };
-        public static uint[] item_w1E = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+        public static uint[] item_w00 = new uint[] { 100, 60, 45, 10, 0, 0, 0, 0 };         // Green    0x00
+        public static uint[] item_w01 = new uint[] { 20, 50, 100, 100, 100, 100, 50, 0 };   // BowserS
+        public static uint[] item_w02 = new uint[] { 0, 45, 60, 75, 70, 50, 40, 20 };       // Red
+        public static uint[] item_w03 = new uint[] { 70, 35, 15, 5, 0, 0, 0, 0 };           // Banana
+        public static uint[] item_w04 = new uint[] { 120, 100, 90, 60, 30, 0, 0, 0 };       // Bignana  0x04
+        public static uint[] item_w05 = new uint[] { 0, 40, 60, 70, 60, 35, 10, 0 };        // Shroom
+        public static uint[] item_w06 = new uint[] { 0, 0, 0, 10, 20, 30, 40, 40 };         // Star
+        public static uint[] item_w07 = new uint[] { 0, 0, 1, 3, 20, 20, 130, 180 };        // Chomp
+        public static uint[] item_w08 = new uint[] { 20, 60, 100, 100, 100, 100, 60, 0 };   // Bomb     0x08
+        public static uint[] item_w09 = new uint[] { 0, 60, 100, 100, 100, 100, 60, 0 };    // R-Fire
+        public static uint[] item_w0A = new uint[] { 0, 0, 0, 0, 0, 10, 20, 30 };           // Shock
+        public static uint[] item_w0B = new uint[] { 40, 70, 80, 80, 80, 70, 60, 0 };       // YoshiEgg
+        public static uint[] item_w0C = new uint[] { 0, 3, 10, 30, 50, 80, 100, 120 };      // Gold     0x0C
+        public static uint[] item_w0D = new uint[] { 0, 0, 0, 10, 15, 20, 20, 20 };         // Blue
+        public static uint[] item_w0E = new uint[] { 0, 1, 3, 10, 30, 90, 110, 130 };       // Hearts
+        public static uint[] item_w0F = new uint[] { 30, 20, 10, 0, 0, 0, 0, 0 };           // FakeBox
+        public static uint[] item_w10 = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };              // ---      0x10
+        public static uint[] item_w11 = new uint[] { 20, 50, 100, 100, 100, 100, 50, 0 };   // TripGr
+        public static uint[] item_w12 = new uint[] { 0, 0, 10, 20, 35, 55, 70, 90 };        // TripSh
+        public static uint[] item_w13 = new uint[] { 20, 50, 100, 100, 100, 100, 50, 0 };   // TripRe   assumed equal to triple greens
+        public static uint[] item_w14 = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };              // ---      0x14
+        public static uint[] item_w15 = new uint[] { 0, 60, 100, 100, 100, 100, 60, 0 };    // G-Fire   assumed equal to red fire
+        public static uint[] item_w16 = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };              // ---
+        public static uint[] item_w17 = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };              // ---
+        public static uint[] item_w18 = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };              // ---      0x18
+        public static uint[] item_w19 = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };              // ---
+        public static uint[] item_w1A = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };              // ---
+        public static uint[] item_w1B = new uint[] { 40, 70, 80, 80, 80, 70, 60, 0 };       // BirdoEgg assumed equal to yoshi egg
+        public static uint[] item_w1C = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };              // --- 0x1C
+        public static uint[] item_w1D = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };              // ---
+        public static uint[] item_w1E = new uint[] { 0, 0, 0, 0, 0, 0, 0, 0 };              // ---
         // and then we can combine them into a PROPER 2Darray...
         public static uint[][] item_weights = new uint[][]
         {

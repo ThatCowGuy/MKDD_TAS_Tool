@@ -48,7 +48,7 @@ namespace MKDD_TAS_Tool
             arr[0] = 0x43;
             arr[1] = 0x30;
             arr[2] = 0x00;
-            arr[3] = 0x00; // 44.0f
+            arr[3] = 0x00; // 176.0f
 
             byte[] maxARR = BitConverter.GetBytes(MAX + 1);
             maxARR = maxARR.Reverse().ToArray();
@@ -68,9 +68,8 @@ namespace MKDD_TAS_Tool
             // init the integrated weigth
             uint integrated_weight = 0;
 
-            int rollableItemID;
             // iterate over the possible items
-            for (rollableItemID = 0; rollableItemID < 10; rollableItemID++)
+            for (int rollableItemID = 0; rollableItemID < 10; rollableItemID++)
             {
                 integrated_weight += ItemProbMatrix[rollableItemID, pos];
                 // check if we stepped over the randomNum threshold
