@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using System.Threading;
 using System.Xml;
 
+
 namespace MKDD_TAS_Tool
 {
     public partial class MainForm : Form
@@ -90,9 +91,13 @@ namespace MKDD_TAS_Tool
         {
             this.UpdateStatusMSG = "Starting...";
 
-            // Setup History vals
+            // Set up some vals
+            int Driver_CNT = 2;
+            int Considered_Positions = 5;
+            int Considered_Realities = 6;
             int HistoryDepth = 10;
-            int[,,,] history_matrix = new int[2, 5, 4, HistoryDepth]; // Driver, Position, Reality, HistDepth
+
+            int[,,,] history_matrix = new int[Driver_CNT, Considered_Positions, Considered_Realities, HistoryDepth];
             uint[] RNG_history = new uint[HistoryDepth];
             for (int step = 0; step < HistoryDepth; step++)
             {
@@ -460,6 +465,28 @@ namespace MKDD_TAS_Tool
                             // NOTE - converting item ID to rollable ID HERE to make bruteforcing faster
                             cond.item_id = ItemData.item_name_to_rollable_ID(xml_item_name);
 
+                            // calculated manually for now, but could easily be done in a func
+                            cond.likelyness = 1.0000f;
+                            if (xml_item_name == "Chomp")
+                            {
+                                if (xml_pos == 3) cond.likelyness = 0.0050f;
+                                if (xml_pos == 4) cond.likelyness = 0.0148f;
+                            }
+                            if (xml_item_name == "Blue")
+                            {
+                                if (xml_pos == 4) cond.likelyness = 0.0493f;
+                                if (xml_pos == 5) cond.likelyness = 0.0682f;
+                                if (xml_pos == 6) cond.likelyness = 0.0909f;
+                            }
+                            if (xml_item_name == "Star")
+                            {
+                                if (xml_pos == 4) cond.likelyness = 0.0493f;
+                            }
+                            if (xml_item_name == "Triple Shrooms")
+                            {
+                                if (xml_pos == 4) cond.likelyness = 0.0985f;
+                            }
+
                             // and add it to the List IF its not 0 (Green Shell, but we'd never bruteforce for that)
                             if (cond.item_id > 0)
                             {
@@ -485,6 +512,12 @@ namespace MKDD_TAS_Tool
             // create column headers - Add(col_name, col_text);
             dataGridView2.Columns.Add("RNGSeed", "Collected Conditions =");
             dataGridView2.Columns[0].Width = (dataGridView2.Width - 3);
+
+            // briefly reorder the list of conditions by their likelyhood to increase
+            // performance during bruteforcing (having less likely conditions up front
+            // means the bruteforcer can determine a failure earlier)
+            List<BruteforceCondition> sorted_condis = Conditions.OrderBy(o => o.likelyness).ToList();
+            this.Conditions = sorted_condis;
 
             this.max_roll = 0;
             foreach (BruteforceCondition cond in Conditions)

@@ -15,10 +15,10 @@
 	<!--ROLL 1-->
 	<Condition>
 		<Roll>0</Roll>
-		<Driver>0</Driver>
+		<Driver>2</Driver>
 		<Pos>3</Pos>
 		<Reality>0</Reality>
-		<Item>Triple Shrooms</Item>
+		<Item>Mushroom</Item>
 	</Condition>
 	
 	<Condition>
@@ -31,13 +31,51 @@
 	
 	
 	<!--ROLL 2-->
+	<Condition>
+		<Roll>1</Roll>
+		<Driver>1</Driver>
+		<Pos>3</Pos>
+		<Reality>4</Reality>
+		<Item>Chomp</Item>
+	</Condition>
+	
 
 	<!--ROLL 3-->
+	<Condition>
+		<Roll>2</Roll>
+		<Driver>0</Driver>
+		<Pos>4</Pos>
+		<Reality>0</Reality>
+		<Item>Star</Item>
+	</Condition>
 
 	<!--ROLL 4-->
+	<Condition>
+		<Roll>3</Roll>
+		<Driver>0</Driver>
+		<Pos>4</Pos>
+		<Reality>3</Reality>
+		<Item>Triple Shrooms</Item>
+	</Condition>
 
 	<!--ROLL 5-->
 
 	<!--ROLL 6-->
+	<Condition>
+		<Roll>5</Roll>
+		<Driver>1</Driver>
+		<Pos>3</Pos>
+		<Reality>2</Reality>
+		<Item>Chomp</Item>
+	</Condition>
+
+	<!--ROLL 7-->
+	<Condition>
+		<Roll>6</Roll>
+		<Driver>1</Driver>
+		<Pos>3</Pos>
+		<Reality>2</Reality>
+		<Item>Chomp</Item>
+	</Condition>
 
 </BruteForcePattern>

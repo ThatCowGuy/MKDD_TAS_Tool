@@ -11,6 +11,8 @@ namespace MKDD_TAS_Tool
         public uint reality;
         public uint roll;
         public uint item_id;
+
+        public float likelyness;
     }
 
     public class CharData
