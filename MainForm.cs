@@ -118,21 +118,38 @@ namespace MKDD_TAS_Tool
             {
                 if (Hist_IDX < 0) Hist_IDX = (HistoryDepth - 1);
 
+                foreach (BruteforceCondition cond in this.Conditions)
+                {
+                    int c_pos = (int)(cond.pos - 1);
+                    // sim this pos+reality combo for both drivers
+                    if (cond.driver_id == 0)
+                    {
+                        history_matrix[0, (cond.pos - 1), cond.reality, Hist_IDX] = get_Roll_ItemIDs(this.RNG, 1, c_pos, cond.reality);
+                        history_matrix[1, (cond.pos - 1), cond.reality, Hist_IDX] = get_Roll_ItemIDs(this.RNG, 2, c_pos, cond.reality);
+                    }
+                    else // only sim this specific pos+reality+driver combo
+                    {
+                        history_matrix[(cond.driver_id - 1), c_pos, cond.reality, Hist_IDX] = get_Roll_ItemIDs(this.RNG, cond.driver_id, c_pos, cond.reality);
+                    }
+                }
+
+                /* instead of simulating every position + reality, we ONLY sim the ones we care about
                 for (uint reality = 0; reality < 6; reality++)
                 {
                     // skip realities that dont need to be simulated
                     if (this.simulated_realities[reality] == 0) continue;
 
                     // get row content from RNG simulation
-                    row_content_1 = get_RollsPerPos_ItemIDs(this.RNG, get_prob_matrix(1, reality), get_col_weight(1, reality), this.selected_driver_1);
-                    row_content_2 = get_RollsPerPos_ItemIDs(this.RNG, get_prob_matrix(2, reality), get_col_weight(2, reality), this.selected_driver_2);
+                    row_content_1 = get_RollsPerPos_ItemIDs(this.RNG, 1, reality);
+                    row_content_2 = get_RollsPerPos_ItemIDs(this.RNG, 2, reality);
 
                     for (int pos = 0; pos < 5; pos++)
                     {
                         history_matrix[0, pos, reality, Hist_IDX] = row_content_1[pos];
                         history_matrix[1, pos, reality, Hist_IDX] = row_content_2[pos];
                     }
-                }
+                } */
+
                 // populate LOWEST history matrix row with the new content
                 RNG_history[Hist_IDX] = this.RNG;
 
@@ -185,7 +202,7 @@ namespace MKDD_TAS_Tool
                     this.Invoke(this.finishStatusDelegate);
                     break;
                 }
-                if (bruteforce_attempts % 100000 == 0)
+                if (bruteforce_attempts % 1.00e6 == 0)
                 {
                     long sim_time = DateTime.Now.Ticks / TimeSpan.TicksPerMillisecond;
                     Console.WriteLine(String.Format("TIME: {0:0.00} s", (sim_time - sim_start) / 1000.0));
@@ -198,26 +215,8 @@ namespace MKDD_TAS_Tool
                 }
                 bruteforce_attempts++;
 
-                /*
-                // step through the history matrix and shift everything up by 1 row to update it
-                for (int step = 0; step < (HistoryDepth - 1); step++)
-                {
-                    RNG_history[step] = RNG_history[(step + 1)];
-
-                    for (uint reality = 0; reality < 4; reality++)
-                    {
-                        for (int pos = 0; pos < 4; pos++)
-                        {
-                            history_matrix[0, pos, reality, step] = history_matrix[0, pos, reality, (step + 1)];
-                            history_matrix[1, pos, reality, step] = history_matrix[1, pos, reality, (step + 1)];
-                        }
-                    }
-                }
-                */
-
-                // update the RNG
+                // update the RNG and HistIDX
                 RNG = CodeRandomness.AdvanceRNG(RNG);
-
                 Hist_IDX -= 1;
             }
         }
@@ -277,7 +276,7 @@ namespace MKDD_TAS_Tool
                     // advance RNG once more for this extra check (temporarily!!!)
                     uint shellRNG = CodeRandomness.AdvanceRNG(RNG);
                     // 40% chance of converting to Triple Reds
-                    if (0.4 < (CodeRandomness.shiftRNGcnvtoFloat(shellRNG)))
+                    if (0.4 < (CodeRandomness.translate_RNG_to_Float(shellRNG)))
                     {
                         rolledItemID = (int)ItemData.item_name_to_ID("Triple Reds");
                         rolledItem_name = ItemData.rollable_items_names[rolledItemID];
@@ -290,7 +289,12 @@ namespace MKDD_TAS_Tool
             // return resulting content array
             return row_content;
         }
-        public int[] get_RollsPerPos_ItemIDs(uint RNG, uint[,] ProbMatrix, uint[] ColWeightVector, String driver_name)
+
+        public int get_Roll_ItemIDs(uint RNG, uint driver, int pos, uint reality)
+        {
+            return CodeRandomness.calc_ItemRoll(RNG, get_prob_matrix(driver, reality), pos, get_col_weight(driver, reality)[pos]);
+        }
+        public int[] get_RollsPerPos_ItemIDs(uint RNG, uint driver, uint reality)
         {
             // create row string array
             int[] row_content = new int[5];
@@ -298,7 +302,8 @@ namespace MKDD_TAS_Tool
             // Get ItemRolls for every Position
             for (int pos = 2; pos < 5; pos++) // NOTE - COMPLETELY disregarding pos #1 + #2 because its uninteresting
             {
-                row_content[pos] = CodeRandomness.calc_ItemRoll(RNG, ProbMatrix, pos, ColWeightVector[pos]);
+                // row_content[pos] = CodeRandomness.calc_ItemRoll(RNG, ProbMatrix, pos, ColWeightVector[pos]);
+                row_content[pos] = get_Roll_ItemIDs(RNG, driver, pos, reality);
             }
             // return resulting content array
             return row_content;
