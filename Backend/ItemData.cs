@@ -17,52 +17,90 @@ namespace MKDD_TAS_Tool
 
     public class CharData
     {
-        // all small character names sorted by order in roaster
-        public static String[] char_names = new string[]
+        // all character names sorted by order in roaster
+        public static List<string> char_names = new List<string>()
         {
+            "Mario",
+            "Luigi",
+            "Peach",
+            "Daisy",
+            "Yoshi",
+            "Birdo",
             "Baby Mario",
             "Baby Luigi",
             "Toad",
             "Toadette",
             "Koopa",
             "Paratroopa",
-            "Diddy Kong",
-            "Bowser Jr."
+            "DK",
+            "Diddy",
+            "Bowser",
+            "Bowser JR",
+            "Wario",
+            "Waluigi"
         };
         // dict that assigns special item IDs to character name
         public static Dictionary<String, uint> specials_dict = new Dictionary<string, uint>()
         {
+            // Fire
+            { "Mario",          0x09 },
+            { "Luigi",          0x15 },
+            // Hearts
+            { "Peach",          0x0E },
+            { "Daisy",          0x0E },
+            // Egg
+            { "Yoshi",          0x0B },
+            { "Birdo",          0x1B },
             // Chomp
-            { "Baby Mario", 0x07 }, 
-            { "Baby Luigi", 0x07 },
-            // G-Shroom
-            { "Toad", 0x0C }, 
-            { "Toadette", 0x0C },
-            // T-Green
-            { "Koopa", 0x11 }, 
-            // T-Red
-            { "Paratroopa", 0x13 },
+            { "Baby Mario",     0x07 }, 
+            { "Baby Luigi",     0x07 },
+            // GoldShroom
+            { "Toad",           0x0C }, 
+            { "Toadette",       0x0C },
+            // TripleGreen (both can get Reds aswell, but thats not implemented yet I think)
+            { "Koopa",          0x11 }, 
+            { "Paratroopa",     0x11 },
             // Big Banana
-            { "Diddy Kong", 0x04 },
+            { "DK",             0x04 },
+            { "Diddy",          0x04 },
             // Bowser Shell
-            { "Bowser Jr.", 0x01 },
+            { "Bowser",         0x01 },
+            { "Bowser JR",      0x01 },
+            // Bomb
+            { "Wario",          0x08 },
+            { "Waluigi",        0x08 },
         };
     }
     public class ItemData
     {
-        public static uint MAX_RNG_Combinations = 4294967295;
+        public static ulong MAX_RNG_Combinations = 4294967295;
 
         public static Dictionary<String, Color> ItemColor_Dict = new Dictionary<String, Color>()
         {
-            { "Bowser Shell", Color.FromArgb(255, 200, 220, 200) },
+            { "Bowser Shell", Color.FromArgb(255, 150, 200, 150) },
             // - - -
+            { "Big Banana", Color.FromArgb(255, 220, 205, 200) },
             { "Mushroom", Color.FromArgb(255, 255, 230, 230) },
             // - - -
             { "Star", Color.FromArgb(255, 255, 255, 190) },
             { "Chomp", Color.FromArgb(255, 220, 220, 220) },
-            // - - -
+            { "Bomb", Color.FromArgb(255, 210, 190, 255) },
+            { "Red Fire", Color.FromArgb(255, 255, 120, 100) },
+            { "Shock", Color.FromArgb(255, 255, 220, 60) },
+            { "Yoshi Egg", Color.FromArgb(255, 200, 230, 210) },
+            { "Goldshroom", Color.FromArgb(255, 255, 235, 155) },
             { "Blue", Color.FromArgb(255, 180, 210, 255) },
-            { "Triple Shrooms", Color.FromArgb(255, 255, 180, 180) },
+            // - - -
+            { "Hearts", Color.FromArgb(255, 255, 110, 225) },
+            // - - -
+            { "Triple Greens", Color.FromArgb(255, 210, 255, 200) },
+            { "Triple Shrooms", Color.FromArgb(255, 255, 170, 170) },
+            { "Triple Reds", Color.FromArgb(255, 250, 200, 235) },
+            // - - - 
+            { "Green Fire", Color.FromArgb(255, 140, 235, 120) },
+            // - - - 
+            { "Birdo Egg", Color.FromArgb(255, 215, 200, 225) },
+            // - - - 
             { "Invalid Roll", Color.FromArgb(255, 255, 0, 0) },
         };
 
@@ -111,48 +149,6 @@ namespace MKDD_TAS_Tool
             // - - - - -
             // - - - - -
         };
-        public static Dictionary<String, uint> realities = new Dictionary<string, uint>()
-        {
-            { "Default", 0x00 },
-            { "No Special", 0x01 },
-            { "No Blue", 0x02 },
-            { "No Star", 0x03 },
-        };
-
-        // as sorted ingame in the RNG get func... hopefully
-        public static String[] rollable_items_names = new string[]
-        {
-            "Green Shell",
-            "Red Shell",
-            "Blue",
-            "Banana",
-            "Mushroom",
-            "Triple Shrooms",
-            "Star",
-            "Shock",
-            "Fake Box",
-            "Special"
-        };
-
-        public static uint item_name_to_ID(string item_name)
-        {
-            if (items_dict.ContainsKey(item_name) == true)
-                return items_dict[item_name];
-
-            else return 0;
-        }
-        public static uint item_name_to_rollable_ID(string item_name)
-        {
-            if (item_name == "Chomp") item_name = "Special";
-            if (item_name == "Bowser Shell") item_name = "Special";
-            if (item_name == "Goldshroom") item_name = "Special";
-
-            for (uint rollableItemID = 0; rollableItemID < 10; rollableItemID++)
-                if (ItemData.rollable_items_names[rollableItemID] == item_name) return rollableItemID;
-
-            return 0;
-        }
-
         // all item names sorted by ID
         public static String[] item_names = new string[]
         {
@@ -188,6 +184,59 @@ namespace MKDD_TAS_Tool
             "Single Shrooms",
             "Single Reds"
         };
+        public static List<string> special_items = new List<string>()
+        {
+            "Bowser Shell", "BS", "BShell",
+            "Big Banana", "Bignana", "BANANA",
+            "Chain Chomp", "Chomp", "WanWan",
+            "Bomb", "Bob Omb",
+            "Red Fire", "Fire", "Green Fire",
+            "Triple Greens", "Triple Reds",
+            "Hearts",
+            "Goldshroom", "GShroom",
+            "Yoshi Egg", "Birdo Egg",
+        };
+        public static Dictionary<String, uint> realities = new Dictionary<string, uint>()
+        {
+            { "Default", 0x00 },
+            { "No Special", 0x01 },
+            { "No Blue", 0x02 },
+            { "No Star", 0x03 },
+        };
+
+        // as sorted ingame in the RNG get func... hopefully
+        public static String[] rollable_items_names = new string[]
+        {
+            "Green Shell",
+            "Red Shell",
+            "Blue",
+            "Banana",
+            "Mushroom",
+            "Triple Shrooms",
+            "Star",
+            "Shock",
+            "Fake Box",
+            "Special"
+        };
+
+        public static uint item_name_to_ID(string item_name)
+        {
+            if (items_dict.ContainsKey(item_name) == true)
+                return items_dict[item_name];
+
+            else return 0;
+        }
+        public static uint item_name_to_rollable_ID(string item_name)
+        {
+            if (special_items.Contains(item_name))
+                item_name = "Special";
+
+            for (uint rollableItemID = 0; rollableItemID < 10; rollableItemID++)
+                if (ItemData.rollable_items_names[rollableItemID] == item_name) return rollableItemID;
+
+            return 0;
+        }
+
 
         // all item weights sorted by ID (need to pre-init all of them like this because C# is ass ?)
         public static uint[] item_w00 = new uint[] { 100, 60, 45, 10, 0, 0, 0, 0 };         // Green    0x00

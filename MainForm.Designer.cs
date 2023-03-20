@@ -92,10 +92,10 @@
             // 
             this.dataGridView1.BackgroundColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(212)))), ((int)(((byte)(192)))));
             this.dataGridView1.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            this.dataGridView1.Location = new System.Drawing.Point(12, 178);
+            this.dataGridView1.Location = new System.Drawing.Point(11, 178);
             this.dataGridView1.Name = "dataGridView1";
             this.dataGridView1.RowHeadersWidth = 22;
-            this.dataGridView1.Size = new System.Drawing.Size(1038, 595);
+            this.dataGridView1.Size = new System.Drawing.Size(1031, 570);
             this.dataGridView1.TabIndex = 2;
             // 
             // label2
@@ -156,14 +156,24 @@
             this.comboBox1.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
             this.comboBox1.FormattingEnabled = true;
             this.comboBox1.Items.AddRange(new object[] {
+            "Mario",
+            "Luigi",
+            "Peach",
+            "Daisy",
+            "Yoshi",
+            "Birdo",
             "Baby Mario",
             "Baby Luigi",
             "Toad",
             "Toadette",
             "Koopa",
             "Paratroopa",
-            "Diddy Kong",
-            "Bowser Jr."});
+            "DK",
+            "Diddy",
+            "Bowser",
+            "Bowser JR",
+            "Wario",
+            "Waluigi"});
             this.comboBox1.Location = new System.Drawing.Point(71, 30);
             this.comboBox1.Name = "comboBox1";
             this.comboBox1.Size = new System.Drawing.Size(97, 21);
@@ -175,14 +185,24 @@
             this.comboBox2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(192)))), ((int)(((byte)(255)))), ((int)(((byte)(192)))));
             this.comboBox2.FormattingEnabled = true;
             this.comboBox2.Items.AddRange(new object[] {
+            "Mario",
+            "Luigi",
+            "Peach",
+            "Daisy",
+            "Yoshi",
+            "Birdo",
             "Baby Mario",
             "Baby Luigi",
             "Toad",
             "Toadette",
             "Koopa",
             "Paratroopa",
-            "Diddy Kong",
-            "Bowser Jr."});
+            "DK",
+            "Diddy",
+            "Bowser",
+            "Bowser JR",
+            "Wario",
+            "Waluigi"});
             this.comboBox2.Location = new System.Drawing.Point(71, 57);
             this.comboBox2.Name = "comboBox2";
             this.comboBox2.Size = new System.Drawing.Size(97, 21);
@@ -436,7 +456,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.ClientSize = new System.Drawing.Size(1062, 785);
+            this.ClientSize = new System.Drawing.Size(1054, 760);
             this.Controls.Add(this.dataGridView2);
             this.Controls.Add(this.panel3);
             this.Controls.Add(this.panel2);

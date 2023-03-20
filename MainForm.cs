@@ -29,41 +29,10 @@ namespace MKDD_TAS_Tool
         private FinishStatusDelegate finishStatusDelegate = null;
         private String UpdateStatusMSG;
 
-        private uint[,] ItemProbMatrix_char1_NoShock = new uint[10, 8];
-        private uint[,] ItemProbMatrix_char2_NoShock = new uint[10, 8];
-        private uint[] total_column_weight_1_NoShock = new uint[8];
-        private uint[] total_column_weight_2_NoShock = new uint[8];
-
-        private uint[,] ItemProbMatrix_char1_NoShock_NoSpecial = new uint[10, 8];
-        private uint[,] ItemProbMatrix_char2_NoShock_NoSpecial = new uint[10, 8];
-        private uint[] total_column_weight_1_NoShock_NoSpecial = new uint[8];
-        private uint[] total_column_weight_2_NoShock_NoSpecial = new uint[8];
-
-        private uint[,] ItemProbMatrix_char1_NoShock_NoBlue = new uint[10, 8];
-        private uint[,] ItemProbMatrix_char2_NoShock_NoBlue = new uint[10, 8];
-        private uint[] total_column_weight_1_NoShock_NoBlue = new uint[8];
-        private uint[] total_column_weight_2_NoShock_NoBlue = new uint[8];
-
-        private uint[,] ItemProbMatrix_char1_NoShock_NoStar = new uint[10, 8];
-        private uint[,] ItemProbMatrix_char2_NoShock_NoStar = new uint[10, 8];
-        private uint[] total_column_weight_1_NoShock_NoStar = new uint[8];
-        private uint[] total_column_weight_2_NoShock_NoStar = new uint[8];
-
-        private uint[,] ItemProbMatrix_char1_NoShock_NoShroom = new uint[10, 8];
-        private uint[,] ItemProbMatrix_char2_NoShock_NoShroom = new uint[10, 8];
-        private uint[] total_column_weight_1_NoShock_NoShroom = new uint[8];
-        private uint[] total_column_weight_2_NoShock_NoShroom = new uint[8];
-
-        private uint[,] ItemProbMatrix_char1_NoShock_NoTripleShroom = new uint[10, 8];
-        private uint[,] ItemProbMatrix_char2_NoShock_NoTripleShroom = new uint[10, 8];
-        private uint[] total_column_weight_1_NoShock_NoTripleShroom = new uint[8];
-        private uint[] total_column_weight_2_NoShock_NoTripleShroom = new uint[8];
-
-        private uint[] simulated_realities = new uint[6];
+        public Bruteforcer bruteforcer = new Bruteforcer();
 
         private uint RNG;
         private int max_roll = 0;
-        private List<BruteforceCondition> Conditions;
 
         private String selected_driver_1;
         private String selected_driver_2;
@@ -89,6 +58,15 @@ namespace MKDD_TAS_Tool
 
         private void HeavyOperation()
         {
+            if (this.bruteforcer.active == 1)
+            {
+                this.UpdateStatusMSG = String.Format("Interrupted [!]");
+                Console.WriteLine(this.UpdateStatusMSG);
+                this.Invoke(this.updateStatusDelegate);
+                this.Invoke(this.finishStatusDelegate);
+                return;
+            }
+            this.bruteforcer.active = 1;
             this.UpdateStatusMSG = "Starting...";
 
             // Set up some vals
@@ -107,7 +85,7 @@ namespace MKDD_TAS_Tool
             // create row string array
             int[] row_content_1 = new int[5];
             int[] row_content_2 = new int[5];
-            uint bruteforce_attempts = 0;
+            ulong bruteforce_attempts = 0;
 
             // I can use this here to iterate through the History matrices, instead
             // of shifting the matrix contents on every sim. Should save some time.
@@ -118,7 +96,7 @@ namespace MKDD_TAS_Tool
             {
                 if (Hist_IDX < 0) Hist_IDX = (HistoryDepth - 1);
 
-                foreach (BruteforceCondition cond in this.Conditions)
+                foreach (BruteforceCondition cond in bruteforcer.Conditions)
                 {
                     int c_pos = (int)(cond.pos - 1);
                     // sim this pos+reality combo for both drivers
@@ -133,28 +111,11 @@ namespace MKDD_TAS_Tool
                     }
                 }
 
-                /* instead of simulating every position + reality, we ONLY sim the ones we care about
-                for (uint reality = 0; reality < 6; reality++)
-                {
-                    // skip realities that dont need to be simulated
-                    if (this.simulated_realities[reality] == 0) continue;
-
-                    // get row content from RNG simulation
-                    row_content_1 = get_RollsPerPos_ItemIDs(this.RNG, 1, reality);
-                    row_content_2 = get_RollsPerPos_ItemIDs(this.RNG, 2, reality);
-
-                    for (int pos = 0; pos < 5; pos++)
-                    {
-                        history_matrix[0, pos, reality, Hist_IDX] = row_content_1[pos];
-                        history_matrix[1, pos, reality, Hist_IDX] = row_content_2[pos];
-                    }
-                } */
-
                 // populate LOWEST history matrix row with the new content
                 RNG_history[Hist_IDX] = this.RNG;
 
                 bool bruteforce_match = true;
-                foreach (BruteforceCondition cond in this.Conditions)
+                foreach (BruteforceCondition cond in bruteforcer.Conditions)
                 {
                     // check if we want a specific driver first
                     if (cond.driver_id > 0)
@@ -191,11 +152,9 @@ namespace MKDD_TAS_Tool
                     this.UpdateStatusMSG = String.Format("{0:n0} ({1:0.00}%)", bruteforce_attempts, percentage);
                     this.Invoke(this.updateStatusDelegate);
 
-                    Hist_IDX = Hist_IDX - ((HistoryDepth - this.max_roll));
-                    if (Hist_IDX < 0)
-                        Hist_IDX += HistoryDepth;
-                    if (bruteforce_attempts < HistoryDepth)
-                        Hist_IDX += this.max_roll;
+                    Hist_IDX = Hist_IDX + this.max_roll;
+                    if (Hist_IDX >= HistoryDepth)
+                        Hist_IDX -= HistoryDepth;
                     this.RNG = RNG_history[Hist_IDX];
 
                     Console.WriteLine(String.Format("MATCH: RNG = {0:X8}", this.RNG));
@@ -212,6 +171,15 @@ namespace MKDD_TAS_Tool
 
                     this.UpdateStatusMSG = String.Format("{0:n0} ({1:0.00}%)", bruteforce_attempts, percentage);
                     this.Invoke(this.updateStatusDelegate);
+
+                    // check if we looped through all seeds
+                    if (bruteforce_attempts > ItemData.MAX_RNG_Combinations + (ulong) this.max_roll)
+                    {
+                        this.UpdateStatusMSG = "IMPOSSIBLE PATTERN";
+                        this.Invoke(this.updateStatusDelegate);
+                        this.Invoke(this.finishStatusDelegate);
+                        break;
+                    }
                 }
                 bruteforce_attempts++;
 
@@ -231,6 +199,8 @@ namespace MKDD_TAS_Tool
         }
         private void FinishStatus()
         {
+            this.bruteforcer.active = 0;
+
             this.textBox2.Text = this.UpdateStatusMSG;
             this.textBox2.BackColor = System.Drawing.Color.Cyan;
             this.textBox2.Update();
@@ -248,15 +218,15 @@ namespace MKDD_TAS_Tool
         public String[] get_RollsPerPos_ItemNames(uint RNG, uint[,] ProbMatrix, uint[] ColWeightVector, String driver_name)
         {
             // create row string array
-            String[] row_content = new String[5];
+            String[] row_content = new String[8];
 
             // Get ItemRolls for every Position
-            for (int pos = 0; pos < 5; pos++) // NOTE - skipping pos #1 because its uninteresting
+            for (int pos = 0; pos < 8; pos++)
             {
                 int rolledItemID = CodeRandomness.calc_ItemRoll(RNG, ProbMatrix, pos, ColWeightVector[pos]);
 
                 // defaulting to "Invalid" first
-                String rolledItem_name= "Invalid Roll";
+                String rolledItem_name = "Invalid Roll";
                 // check if we have a valid roll and get the corresponding itemname
                 if (rolledItemID != -1)
                 {
@@ -271,15 +241,19 @@ namespace MKDD_TAS_Tool
                 }
 
                 // special check for Triple Reds only if not Pos#1
-                if (rolledItem_name == "Triple Greens" & pos > 0)
+                if (rolledItem_name == "Triple Greens" && pos > 0)
                 {
                     // advance RNG once more for this extra check (temporarily!!!)
-                    uint shellRNG = CodeRandomness.AdvanceRNG(RNG);
+                    // NOTE: once more means we need to advance it twice, because we only IMPLICITLY
+                    //       advance within the RNG calc function now...
+                    uint shellRNG = CodeRandomness.AdvanceRNG(this.RNG);
+                    shellRNG = CodeRandomness.AdvanceRNG(shellRNG);
+
                     // 40% chance of converting to Triple Reds
-                    if (0.4 < (CodeRandomness.translate_RNG_to_Float(shellRNG)))
+                    if (0.4 < CodeRandomness.translate_RNG_to_Float(shellRNG))
                     {
-                        rolledItemID = (int)ItemData.item_name_to_ID("Triple Reds");
-                        rolledItem_name = ItemData.rollable_items_names[rolledItemID];
+                        rolledItem_name = "Triple Reds";
+                        rolledItemID = (int)ItemData.item_name_to_ID(rolledItem_name);
                     }
                 }
 
@@ -292,15 +266,15 @@ namespace MKDD_TAS_Tool
 
         public int get_Roll_ItemIDs(uint RNG, uint driver, int pos, uint reality)
         {
-            return CodeRandomness.calc_ItemRoll(RNG, get_prob_matrix(driver, reality), pos, get_col_weight(driver, reality)[pos]);
+            return CodeRandomness.calc_ItemRoll(RNG, bruteforcer.get_prob_matrix(driver, reality), pos, bruteforcer.get_col_weight(driver, reality)[pos]);
         }
         public int[] get_RollsPerPos_ItemIDs(uint RNG, uint driver, uint reality)
         {
             // create row string array
-            int[] row_content = new int[5];
+            int[] row_content = new int[8];
 
             // Get ItemRolls for every Position
-            for (int pos = 2; pos < 5; pos++) // NOTE - COMPLETELY disregarding pos #1 + #2 because its uninteresting
+            for (int pos = 0; pos < 8; pos++) // NOTE - COMPLETELY disregarding pos #1 + #2 because its uninteresting
             {
                 // row_content[pos] = CodeRandomness.calc_ItemRoll(RNG, ProbMatrix, pos, ColWeightVector[pos]);
                 row_content[pos] = get_Roll_ItemIDs(RNG, driver, pos, reality);
@@ -313,11 +287,14 @@ namespace MKDD_TAS_Tool
         {
             InitializeComponent();
             // Im putting these defaults HERE because VSC doesnt want me to edit the auto-gen code...
-            this.comboBox1.SelectedIndex = 1; // BL
-            this.comboBox2.SelectedIndex = 7; // BJR
+
+            this.comboBox1.SelectedIndex = CharData.char_names.IndexOf("Baby Luigi");
+            this.comboBox2.SelectedIndex = CharData.char_names.IndexOf("Bowser JR");
 
             // this forbids the user from changing grid content (and removes last row)
             this.dataGridView1.AllowUserToAddRows = false;
+
+            this.bruteforcer.set_up_matrices(this.selected_driver_1, this.selected_driver_2);
         }
 
         string[] concat_string_arrays(string[] A, string[] B)
@@ -349,23 +326,19 @@ namespace MKDD_TAS_Tool
             // create column headers - Add(col_name, col_text);
             dataGridView1.Columns.Add("RNGSeed", "RNG Value");
             // NOTE - I WANT this to repeat
-            for (int pos = 1; pos < 6; pos++)
+            for (int pos = 1; pos <= 8; pos++)
             {
-                dataGridView1.Columns.Add("UnusedName", "(D-1) Pos " + pos.ToString());
-                dataGridView1.Columns.Add("UnusedName", "(D-2) Pos " + pos.ToString());
+                dataGridView1.Columns.Add("UnusedName", string.Format("( {0} ) {1}", pos, this.selected_driver_1));
+                dataGridView1.Columns.Add("UnusedName", string.Format("( {0} ) {1}", pos, this.selected_driver_2));
             }
-            for (int col = 0; col < 11; col++)
-                dataGridView1.Columns[col].Width = 90;
+            for (int col = 0; col < (1+8*2); col++)
+                dataGridView1.Columns[col].Width = 110;
             // and sepperate the cols a bit for visibility
-            this.dataGridView1.Columns[0].DividerWidth = 3;
-            this.dataGridView1.Columns[2].DividerWidth = 3;
-            this.dataGridView1.Columns[4].DividerWidth = 3;
-            this.dataGridView1.Columns[6].DividerWidth = 3;
-            this.dataGridView1.Columns[8].DividerWidth = 3;
-            this.dataGridView1.Columns[10].DividerWidth = 3;
+            for (int col = 0; col < (1+8*2); col += 2)
+                this.dataGridView1.Columns[col].DividerWidth = 3;
 
             // some nice colors
-            dataGridView1.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(255, 170, 170, 170);
+            dataGridView1.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(255, 192, 255, 192);
             dataGridView1.EnableHeadersVisualStyles = false;
             dataGridView1.Columns[0].DefaultCellStyle.BackColor = Color.FromArgb(255, 230, 230, 230);
 
@@ -373,12 +346,12 @@ namespace MKDD_TAS_Tool
             this.RNG = uint.Parse(textBox3.Text.Replace("0x", ""), System.Globalization.NumberStyles.HexNumber);
 
             // set up the probability matrices
-            this.set_up_matrices();
+            this.bruteforcer.set_up_matrices(this.selected_driver_1, this.selected_driver_2);
 
             // create row string array
-            String[] row_content_1 = new String[5];
-            String[] row_content_2 = new String[5];
-            String[] row_content = new String[11];
+            String[] row_content_1 = new String[8];
+            String[] row_content_2 = new String[8];
+            String[] row_content = new String[1+8*2];
             // and start simulating the RNG
             for (int i = 0; i < 10; i++)
             {
@@ -392,16 +365,16 @@ namespace MKDD_TAS_Tool
                     if (reality == 5) RNG_string[0] = "No TripShrooms";
 
                     // get row content from RNG simulation - character 1
-                    row_content_1 = get_RollsPerPos_ItemNames(this.RNG, get_prob_matrix(1, reality), get_col_weight(1, reality), selected_driver_1);
+                    row_content_1 = get_RollsPerPos_ItemNames(this.RNG, bruteforcer.get_prob_matrix(1, reality), bruteforcer.get_col_weight(1, reality), selected_driver_1);
                     // get row content from RNG simulation - character 2
-                    row_content_2 = get_RollsPerPos_ItemNames(this.RNG, get_prob_matrix(2, reality), get_col_weight(2, reality), selected_driver_2);
+                    row_content_2 = get_RollsPerPos_ItemNames(this.RNG, bruteforcer.get_prob_matrix(2, reality), bruteforcer.get_col_weight(2, reality), selected_driver_2);
                     // and build the full row
                     row_content = interweave_string_arrays(row_content_1, row_content_2);
                     row_content = concat_string_arrays(RNG_string, row_content);
 
                     this.dataGridView1.Rows.Add(row_content);
                     // check if there is a special cell color defined for the pull
-                    for (int col = 1; col < 11; col++)
+                    for (int col = 1; col < (1+8*2); col++)
                     {
                         if (ItemData.ItemColor_Dict.ContainsKey(row_content[col]) == true)
                         {
@@ -424,108 +397,30 @@ namespace MKDD_TAS_Tool
         // controls the bruteforcing
         private void button2_Click(object sender, EventArgs e)
         {
-            // create a new, empty list of bruteforcer conditions
-            this.Conditions = new List<BruteforceCondition>();
-            uint xml_driver_id = 0; // 0 = dont care, 1 = 1, 2 = 2
-            uint xml_pos = 0;
-            uint xml_reality = 0;
-            uint xml_roll = 0;
-            string xml_item_name = "";
-
-            // open the pattern XML and readout the conditions
-            XmlReader PatternFile = XmlReader.Create("../../BruteForcePattern.xml");
-
-            // reset the simulated realities
-            for (int i = 0; i < 6; i++)
-                this.simulated_realities[i] = 0;
-
-            while (PatternFile.Read())
+            string error_code = this.bruteforcer.read_pattern_file("../../BruteForcePattern.xml");
+            if (string.IsNullOrEmpty(error_code) == false)
             {
-                switch (PatternFile.Name.ToString())
-                {
-                    case "Driver":
-                        xml_driver_id = UInt32.Parse(PatternFile.ReadString());
-                        break;
-                    case "Pos":
-                        xml_pos = UInt32.Parse(PatternFile.ReadString());
-                        break;
-                    case "Reality":
-                        xml_reality = UInt32.Parse(PatternFile.ReadString());
-                        break;
-                    case "Roll":
-                        xml_roll = UInt32.Parse(PatternFile.ReadString());
-                        break;
-                    case "Item":
-                        xml_item_name = PatternFile.ReadString();
-                        break;
-                    case "Condition":
-                        if (PatternFile.NodeType == XmlNodeType.EndElement)
-                        {
-                            // create a new Condition instance from collected Data
-                            BruteforceCondition cond = new BruteforceCondition();
-                            cond.driver_id = xml_driver_id;
-                            cond.pos = xml_pos;
-                            cond.reality = xml_reality;
-                            cond.roll = xml_roll;
-                            // NOTE - converting item ID to rollable ID HERE to make bruteforcing faster
-                            cond.item_id = ItemData.item_name_to_rollable_ID(xml_item_name);
-
-                            // calculated manually for now, but could easily be done in a func
-                            cond.likelyness = 1.0000f;
-                            if (xml_item_name == "Chomp")
-                            {
-                                if (xml_pos == 3) cond.likelyness = 0.0050f;
-                                if (xml_pos == 4) cond.likelyness = 0.0148f;
-                            }
-                            if (xml_item_name == "Blue")
-                            {
-                                if (xml_pos == 4) cond.likelyness = 0.0493f;
-                                if (xml_pos == 5) cond.likelyness = 0.0682f;
-                                if (xml_pos == 6) cond.likelyness = 0.0909f;
-                            }
-                            if (xml_item_name == "Star")
-                            {
-                                if (xml_pos == 4) cond.likelyness = 0.0493f;
-                            }
-                            if (xml_item_name == "Triple Shrooms")
-                            {
-                                if (xml_pos == 4) cond.likelyness = 0.0985f;
-                            }
-
-                            // and add it to the List IF its not 0 (Green Shell, but we'd never bruteforce for that)
-                            if (cond.item_id > 0)
-                            {
-                                this.Conditions.Add(cond);
-                                // add this reality to the simulated ones
-                                this.simulated_realities[cond.reality] = 1;
-                            }
-                            else
-                            {
-                                Console.WriteLine(String.Format("Ruh-Oh! A Condition couldnt be parsed: ItemName={0}", xml_item_name));
-                                this.textBox2.Text = String.Format("XMLR saw: {0}", xml_item_name);
-                                this.Conditions = new List<BruteforceCondition>();
-                                return;
-                            }
-                        }
-                        break;
-                }
+                Console.WriteLine(String.Format("Ruh-Oh! A Condition couldnt be parsed: ItemName={0}", error_code));
+                this.textBox2.Text = String.Format("XMLR saw: {0}", error_code);
+                bruteforcer.Conditions = new List<BruteforceCondition>();
+                return;
             }
 
             // reset the grid contents
             dataGridView2.Rows.Clear();
             dataGridView2.Columns.Clear();
             // create column headers - Add(col_name, col_text);
-            dataGridView2.Columns.Add("RNGSeed", "Collected Conditions =");
+            dataGridView2.Columns.Add("RNGSeed", string.Format("{0} Conditions collected from XML", bruteforcer.Conditions.Count));
             dataGridView2.Columns[0].Width = (dataGridView2.Width - 3);
 
             // briefly reorder the list of conditions by their likelyhood to increase
             // performance during bruteforcing (having less likely conditions up front
             // means the bruteforcer can determine a failure earlier)
-            List<BruteforceCondition> sorted_condis = Conditions.OrderBy(o => o.likelyness).ToList();
-            this.Conditions = sorted_condis;
+            List<BruteforceCondition> sorted_condis = bruteforcer.Conditions.OrderBy(o => o.likelyness).ToList();
+            bruteforcer.Conditions = sorted_condis;
 
             this.max_roll = 0;
-            foreach (BruteforceCondition cond in Conditions)
+            foreach (BruteforceCondition cond in bruteforcer.Conditions)
             {
                 string condition_msg = String.Format("{0} at #{1} on Roll-{2} For Driver #{3} in Reality #{4}",
                     ItemData.rollable_items_names[cond.item_id], cond.pos, cond.roll, cond.driver_id, cond.reality);
@@ -547,7 +442,7 @@ namespace MKDD_TAS_Tool
             // init RNG from TextField
             this.RNG = uint.Parse(textBox3.Text.Replace("0x", ""), System.Globalization.NumberStyles.HexNumber);
             // set up the probability matrices
-            this.set_up_matrices();
+            this.bruteforcer.set_up_matrices(this.selected_driver_1, this.selected_driver_2);
             this.workerThread = new Thread(new ThreadStart(this.HeavyOperation));
             this.workerThread.Start();
         }
@@ -684,258 +579,6 @@ namespace MKDD_TAS_Tool
         private void checkBox4_CheckedChanged(object sender, EventArgs e)
         {
 
-        }
-        // I know this looks very painful and stupid, but its quicker for a bruteforcer to have these matrices
-        // available like this (although maybe there is a neater way of filling them...)
-        public void set_up_matrices()
-        {
-            // set up the probability matrices
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock, 4, ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock, 5, ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock, 7, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_1]]);
-            // and #2
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock, 4, ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock, 5, ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock, 7, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_2]]);
-            // pre-calculate the total weight for each column
-            for (int pos = 0; pos < 8; pos++)
-            {
-                this.total_column_weight_1_NoShock[pos] = 0;
-                this.total_column_weight_2_NoShock[pos] = 0;
-                for (int rollableItemID = 0; rollableItemID < this.ItemProbMatrix_char1_NoShock.GetLength(0); rollableItemID++)
-                {
-                    this.total_column_weight_1_NoShock[pos] += this.ItemProbMatrix_char1_NoShock[rollableItemID, pos];
-                    this.total_column_weight_2_NoShock[pos] += this.ItemProbMatrix_char2_NoShock[rollableItemID, pos];
-                }
-            }
-
-            // set up the probability matrices
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoSpecial, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoSpecial, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoSpecial, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoSpecial, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoSpecial, 4, ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoSpecial, 5, ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoSpecial, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoSpecial, 7, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoSpecial, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoSpecial, 9, ItemData.item_wNONE);
-            // and #2
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoSpecial, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoSpecial, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoSpecial, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoSpecial, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoSpecial, 4, ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoSpecial, 5, ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoSpecial, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoSpecial, 7, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoSpecial, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoSpecial, 9, ItemData.item_wNONE);
-            // pre-calculate the total weight for each column
-            for (int pos = 0; pos < 8; pos++)
-            {
-                this.total_column_weight_1_NoShock_NoSpecial[pos] = 0;
-                this.total_column_weight_2_NoShock_NoSpecial[pos] = 0;
-                for (int rollableItemID = 0; rollableItemID < this.ItemProbMatrix_char1_NoShock_NoSpecial.GetLength(0); rollableItemID++)
-                {
-                    this.total_column_weight_1_NoShock_NoSpecial[pos] += this.ItemProbMatrix_char1_NoShock_NoSpecial[rollableItemID, pos];
-                    this.total_column_weight_2_NoShock_NoSpecial[pos] += this.ItemProbMatrix_char2_NoShock_NoSpecial[rollableItemID, pos];
-                }
-            }
-            // set up the probability matrices
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoBlue, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoBlue, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoBlue, 2, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoBlue, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoBlue, 4, ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoBlue, 5, ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoBlue, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoBlue, 7, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoBlue, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoBlue, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_1]]);
-            // and #2
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoBlue, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoBlue, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoBlue, 2, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoBlue, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoBlue, 4, ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoBlue, 5, ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoBlue, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoBlue, 7, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoBlue, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoBlue, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_2]]);
-            // pre-calculate the total weight for each column
-            for (int pos = 0; pos < 8; pos++)
-            {
-                this.total_column_weight_1_NoShock_NoBlue[pos] = 0;
-                this.total_column_weight_2_NoShock_NoBlue[pos] = 0;
-                for (int rollableItemID = 0; rollableItemID < this.ItemProbMatrix_char1_NoShock_NoBlue.GetLength(0); rollableItemID++)
-                {
-                    this.total_column_weight_1_NoShock_NoBlue[pos] += this.ItemProbMatrix_char1_NoShock_NoBlue[rollableItemID, pos];
-                    this.total_column_weight_2_NoShock_NoBlue[pos] += this.ItemProbMatrix_char2_NoShock_NoBlue[rollableItemID, pos];
-                }
-            }
-
-            // set up the probability matrices
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoStar, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoStar, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoStar, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoStar, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoStar, 4, ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoStar, 5, ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoStar, 6, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoStar, 7, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoStar, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoStar, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_1]]);
-            // and #2
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoStar, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoStar, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoStar, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoStar, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoStar, 4, ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoStar, 5, ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoStar, 6, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoStar, 7, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoStar, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoStar, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_2]]);
-            // pre-calculate the total weight for each column
-            for (int pos = 0; pos < 8; pos++)
-            {
-                this.total_column_weight_1_NoShock_NoStar[pos] = 0;
-                this.total_column_weight_2_NoShock_NoStar[pos] = 0;
-                for (int rollableItemID = 0; rollableItemID < this.ItemProbMatrix_char1_NoShock_NoStar.GetLength(0); rollableItemID++)
-                {
-                    this.total_column_weight_1_NoShock_NoStar[pos] += this.ItemProbMatrix_char1_NoShock_NoStar[rollableItemID, pos];
-                    this.total_column_weight_2_NoShock_NoStar[pos] += this.ItemProbMatrix_char2_NoShock_NoStar[rollableItemID, pos];
-                }
-            }
-
-            // set up the probability matrices
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 4, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 5, ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 7, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoShroom, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_1]]);
-            // and #2
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 4, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 5, ItemData.item_weights[ItemData.item_name_to_ID("Triple Shrooms")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 7, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoShroom, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_2]]);
-            // pre-calculate the total weight for each column
-            for (int pos = 0; pos < 8; pos++)
-            {
-                this.total_column_weight_1_NoShock_NoShroom[pos] = 0;
-                this.total_column_weight_2_NoShock_NoShroom[pos] = 0;
-                for (int rollableItemID = 0; rollableItemID < this.ItemProbMatrix_char1_NoShock_NoShroom.GetLength(0); rollableItemID++)
-                {
-                    this.total_column_weight_1_NoShock_NoShroom[pos] += this.ItemProbMatrix_char1_NoShock_NoShroom[rollableItemID, pos];
-                    this.total_column_weight_2_NoShock_NoShroom[pos] += this.ItemProbMatrix_char2_NoShock_NoShroom[rollableItemID, pos];
-                }
-            }
-
-            // set up the probability matrices
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 4, ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 5, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 7, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char1_NoShock_NoTripleShroom, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_1]]);
-            // and #2
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 0, ItemData.item_weights[ItemData.item_name_to_ID("Green Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 1, ItemData.item_weights[ItemData.item_name_to_ID("Red Shell")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 2, ItemData.item_weights[ItemData.item_name_to_ID("Blue")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 3, ItemData.item_weights[ItemData.item_name_to_ID("Banana")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 4, ItemData.item_weights[ItemData.item_name_to_ID("Mushroom")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 5, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 6, ItemData.item_weights[ItemData.item_name_to_ID("Star")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 7, ItemData.item_wNONE);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 8, ItemData.item_weights[ItemData.item_name_to_ID("Fake Box")]);
-            insert_row_in_matrix(this.ItemProbMatrix_char2_NoShock_NoTripleShroom, 9, ItemData.item_weights[CharData.specials_dict[this.selected_driver_2]]);
-            // pre-calculate the total weight for each column
-            for (int pos = 0; pos < 8; pos++)
-            {
-                this.total_column_weight_1_NoShock_NoTripleShroom[pos] = 0;
-                this.total_column_weight_2_NoShock_NoTripleShroom[pos] = 0;
-                for (int rollableItemID = 0; rollableItemID < this.ItemProbMatrix_char1_NoShock_NoTripleShroom.GetLength(0); rollableItemID++)
-                {
-                    this.total_column_weight_1_NoShock_NoTripleShroom[pos] += this.ItemProbMatrix_char1_NoShock_NoTripleShroom[rollableItemID, pos];
-                    this.total_column_weight_2_NoShock_NoTripleShroom[pos] += this.ItemProbMatrix_char2_NoShock_NoTripleShroom[rollableItemID, pos];
-                }
-            }
-        }
-
-        public uint[,] get_prob_matrix(uint driver, uint reality)
-        {
-            if (driver == 1)
-            {
-                if (reality == 0) return this.ItemProbMatrix_char1_NoShock;
-                if (reality == 1) return this.ItemProbMatrix_char1_NoShock_NoSpecial;
-                if (reality == 2) return this.ItemProbMatrix_char1_NoShock_NoBlue;
-                if (reality == 3) return this.ItemProbMatrix_char1_NoShock_NoStar;
-                if (reality == 4) return this.ItemProbMatrix_char1_NoShock_NoShroom;
-                if (reality == 5) return this.ItemProbMatrix_char1_NoShock_NoTripleShroom;
-            }
-            if (driver == 2)
-            {
-                if (reality == 0) return this.ItemProbMatrix_char2_NoShock;
-                if (reality == 1) return this.ItemProbMatrix_char2_NoShock_NoSpecial;
-                if (reality == 2) return this.ItemProbMatrix_char2_NoShock_NoBlue;
-                if (reality == 3) return this.ItemProbMatrix_char2_NoShock_NoStar;
-                if (reality == 4) return this.ItemProbMatrix_char2_NoShock_NoShroom;
-                if (reality == 5) return this.ItemProbMatrix_char2_NoShock_NoTripleShroom;
-            }
-            return null;
-        }
-        public uint[] get_col_weight(uint driver, uint reality)
-        {
-            if (driver == 1)
-            {
-                if (reality == 0) return this.total_column_weight_1_NoShock;
-                if (reality == 1) return this.total_column_weight_1_NoShock_NoSpecial;
-                if (reality == 2) return this.total_column_weight_1_NoShock_NoBlue;
-                if (reality == 3) return this.total_column_weight_1_NoShock_NoStar;
-                if (reality == 4) return this.total_column_weight_1_NoShock_NoShroom;
-                if (reality == 5) return this.total_column_weight_1_NoShock_NoTripleShroom;
-            }
-            if (driver == 2)
-            {
-                if (reality == 0) return this.total_column_weight_2_NoShock;
-                if (reality == 1) return this.total_column_weight_2_NoShock_NoSpecial;
-                if (reality == 2) return this.total_column_weight_2_NoShock_NoBlue;
-                if (reality == 3) return this.total_column_weight_2_NoShock_NoStar;
-                if (reality == 4) return this.total_column_weight_2_NoShock_NoShroom;
-                if (reality == 5) return this.total_column_weight_2_NoShock_NoTripleShroom;
-            }
-            return null;
         }
 
         private void button3_MouseClick(object sender, MouseEventArgs e)
